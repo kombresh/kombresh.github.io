@@ -645,6 +645,14 @@ def check_c(root, fnd):
 # 這樣 `python:socket` 這種 API 名稱、散文裡的「Python 3.13」都不會誤報。
 PY_INVOKE = re.compile(r"(?<![\w.\-/\\])(python3?)\s+(-m\s+[\w.]+|[\w./\\-]+\.py)")
 
+# 同樣的形狀，但直譯器是 `py`（Windows 的 launcher，唯一不會被 Store stub 攔的）
+PY_LAUNCHER = re.compile(r"(?<![\w.\-/\\])py\s+(-m\s+[\w.]+|[\w./\\-]+\.py)")
+
+# `python3` 本身在 Linux／CI 上是對的寫法。真正該警告的是「只寫了 python3、
+# 沒有同時給 Windows 的 py」。所以往上下各看幾行：附近有 py 的替代寫法就放行。
+# 不這樣做的話，一份正確地把兩種平台都寫清楚的文件反而會被自己的稽核擋下來。
+PY_HINT_WINDOW = 4
+
 
 def check_c8_python_invocation(root, fnd):
     """C8：說明文字裡叫 Python 的方式。
@@ -663,8 +671,17 @@ def check_c8_python_invocation(root, fnd):
         text = read_text(full)
         if text is None:
             continue
-        for ln, line in enumerate(text.splitlines(), 1):
+        lines = text.splitlines()
+        # 哪幾行提供了 `py` 的替代寫法
+        has_py = set(ln for ln, line in enumerate(lines, 1)
+                     if PY_LAUNCHER.search(line))
+        for ln, line in enumerate(lines, 1):
             if line.lstrip().startswith("#!"):
+                continue
+            nearby = any(n in has_py
+                         for n in range(ln - PY_HINT_WINDOW,
+                                        ln + PY_HINT_WINDOW + 1))
+            if nearby:
                 continue
             for m in PY_INVOKE.finditer(line):
                 exe = m.group(1)

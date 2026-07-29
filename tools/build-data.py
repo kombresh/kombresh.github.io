@@ -41,9 +41,14 @@
 
 另外沒有任何樣本原始位元組被複製出來 —— 這支腳本從頭到尾沒有開過樣本檔。
 
-用法：
+用法（Linux / macOS 用 python3，Windows 用 py）：
     python3 tools/build-data.py
+    py      tools/build-data.py
     python3 tools/build-data.py --speakeasy <dir> --intel <dir> --mirage <dir> --out <dir>
+
+Windows 上不要用 `python` 或 `python3` —— 那兩個名字會被 Microsoft Store 的
+App Execution Alias 攔下（0 bytes 的 reparse point），沒有任何輸出、退出碼
+9009 或 49，看起來像跑完了其實根本沒執行。一律用 `py`。
 
 來源目錄預設是「page/ 的上一層」底下的同名資料夾，也可以用環境變數覆蓋：
     AIS3_SPEAKEASY / AIS3_INTEL / AIS3_MIRAGE

@@ -249,7 +249,8 @@
     box.appendChild(el('p', null, '資料載入失敗：' + (err && err.message ? err.message : err)));
     box.appendChild(el('p', 'small faint',
       '若是以 file:// 直接開啟，請確認 data/data.js 存在；' +
-      '或在這個目錄跑 python3 -m http.server 之後用 http://localhost:8000/ 瀏覽。'));
+      '或在這個目錄起一個本機伺服器再用 http://localhost:8000/ 瀏覽' +
+      '（Linux／macOS：python3 -m http.server；Windows：py -m http.server）。'));
     mount.appendChild(box);
   }
 
