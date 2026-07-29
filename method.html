@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方法說明 —— AIS3 惡意程式分析專題</title>
+<meta name="description" content="動態端與靜態端的架構、三支驗證工具各自的盲區，以及兩邊做不到的事。">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html">AIS3 惡意程式分析專題<span class="brand-sub">static intel × speakeasy</span></a>
+    <nav class="site-nav" aria-label="主選單">
+      <a href="index.html">總覽</a>
+      <a href="method.html">方法說明</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<div class="wrap">
+
+  <section class="hero">
+    <div class="rule-accent" aria-hidden="true"></div>
+    <h1>方法說明</h1>
+    <p class="hero-sub">
+      兩條流水線怎麼組起來的、我們用什麼證明它沒有在編造，以及哪些事情它做不到。
+      最後一節是這一頁最重要的部分。
+    </p>
+  </section>
+
+  <!-- ============================================================ 架構 -->
+  <section class="section">
+    <h2>兩邊的架構</h2>
+    <div class="arch-col">
+
+      <div class="arch-box dyn">
+        <h3>動態端 —— Speakeasy 模擬 + LLM 環境偽裝</h3>
+        <p class="small muted">
+          樣本的機器碼跑在模擬器的虛擬 CPU 上，Windows API 由 Python handler 接手。
+          <strong>樣本從頭到尾沒有真的 socket、沒有真的檔案系統</strong>。
+        </p>
+        <ol>
+          <li><strong>內圈（每次呼叫）</strong>：攔截所有 API 呼叫。有前例就照帳本回同一個答案，
+            沒有前例才問 LLM 要一個「像真機」的回傳值，其餘交回模擬器預設。</li>
+          <li><strong>帳本</strong>：同一個問題，樣本每次都得到同一個答案 —— 反偵測的樣本常常問兩次比對。</li>
+          <li><strong>外圈（每輪之間）</strong>：這一輪提早中止的話，把中止原因交給 LLM 修正環境剖繪，
+            然後整個重跑。<strong>最多五輪</strong>。</li>
+          <li><strong>誠實護欄</strong>：這一輪如果依賴了「模擬器根本沒實作、值是我們合成的」API，
+            結果一律標成 <code>inconclusive</code>；LLM 端點掛掉或回不能用的內容時，
+            同時標 <code>inconclusive</code> 與 <code>success = false</code>。</li>
+        </ol>
+        <p class="small faint" style="margin-bottom:0">
+          LLM 只產生<strong>資料</strong>（環境剖繪的值、API 回傳計畫），不會去改流水線的程式碼。
+        </p>
+      </div>
+
+      <div class="arch-box sta">
+        <h3>靜態端 —— 規則式情報彙整</h3>
+        <p class="small muted">
+          不執行樣本、不使用 LLM。八個工具各跑各的，結果彙整成一份固定 schema 的 JSON
+          （<code>static_intel/1</code>）交給動態端。
+        </p>
+        <ol>
+          <li><strong>PE 結構</strong>（pefile）→ 架構、區段、匯入表、TLS callback、resource、overlay</li>
+          <li><strong>加殼／編譯器偵測</strong>（DiE）→ packer / protector / linker</li>
+          <li><strong>自動解殼</strong>與 <strong>PyInstaller 解包</strong> → 只在適用時才跑</li>
+          <li><strong>字串抽取</strong>（FLOSS）→ 含堆疊字串與執行期解密字串</li>
+          <li><strong>能力標籤</strong>（capa）→ 能力與 ATT&amp;CK 對應</li>
+          <li><strong>自有規則比對</strong>（YARA，17 條）</li>
+          <li><strong>反編譯</strong>（Ghidra headless）→ 只挑有碰到目標 API 的函式</li>
+        </ol>
+        <p class="small muted">
+          推導出來的結論放 <code>derived</code>：檢測點清單、行為分類、加殼判定（<strong>一定附證據</strong>）、
+          C2 候選（含 benign 標記與 defanged 形式）、以及給動態端的<strong>模擬預算建議與理由</strong>。
+        </p>
+        <p class="small faint" style="margin-bottom:0">
+          主流程完全不用 LLM，是刻意的：可重現性與 LLM 的輸出不確定性互斥。
+          同一支樣本重跑，<code>content_sha256</code> 必須一致。
+        </p>
+      </div>
+
+    </div>
+
+    <div class="note sta" style="margin-top:18px">
+      <h4>兩邊怎麼接</h4>
+      <p style="margin-bottom:0">
+        靜態端輸出的 <code>suggested_budget_seconds</code>、檢測點清單、以及
+        <code>analysis_notes</code>（例如「有 TLS callback，主要邏輯可能不在 entry point」）
+        就是要餵給動態端當起始條件的東西。
+        <strong>這一段整合目前還沒有跑過</strong> —— 本站第三組數據標成「尚未取得」，指的就是它。
+      </p>
+    </div>
+  </section>
+
+  <!-- ================================================== 三組對照 -->
+  <section class="section">
+    <h2>三組對照分別是什麼<span class="h2-note">不要混淆</span></h2>
+    <p class="lede small">
+      同一批樣本、同一台模擬器，差別只在「我們額外做了什麼」。
+      三組的語意必須分得開，不然「數字變大了」會被讀成「方法有效」。
+    </p>
+
+    <div class="arch-col" style="margin-top:14px">
+      <div class="arch-box dyn">
+        <h3>① 純 Speakeasy</h3>
+        <p class="small muted">什麼都不做，直接把樣本丟進模擬器跑一次。</p>
+        <ul>
+          <li>沒有環境偽裝、沒有 LLM、沒有重跑</li>
+          <li>模擬器碰到沒實作的 API 就中止</li>
+          <li>這是對照組：反偵測的樣本會在這裡提早停下來</li>
+        </ul>
+      </div>
+      <div class="arch-box dyn">
+        <h3>② ＋動態（mirage）</h3>
+        <p class="small muted">
+          內圈由 LLM <strong>即時捏造</strong>模擬器沒實作的 API 回傳值；
+          外圈每一輪依中止原因<strong>修訂環境剖繪</strong>後整個重跑。
+        </p>
+        <ul>
+          <li>「跑得更深」是靠餵它一個更像真機的謊，不是靠看懂它</li>
+          <li>只要有一個值是合成的，那一輪就標 <code>inconclusive</code></li>
+          <li><strong>本批六支的 <code>success</code> 全部是 false、<code>assisted</code>
+            全部是 true</strong></li>
+        </ul>
+      </div>
+      <div class="arch-box sta">
+        <h3>③ ＋動態＋靜態</h3>
+        <p class="small muted">先跑靜態流水線，把結果餵給動態端當起始條件。</p>
+        <ul>
+          <li><strong>尚未取得</strong> —— 這一組沒有跑過</li>
+          <li>網站上它是虛線佔位，不會有任何數字</li>
+          <li>要問的是「少走幾輪冤枉路」，那需要跑過才知道</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ 逐輪圖表怎麼讀 -->
+  <section class="section">
+    <h2>逐輪圖表怎麼讀<span class="h2-note">四個容易讀錯的地方</span></h2>
+
+    <ul class="limits" style="margin-top:16px">
+      <li>
+        <span class="lim-title">長條是「每輪各自的計數」，不是累積</span>
+        <span class="lim-body">
+          迭代之間的 API 數<strong>不是單調遞增</strong>。本批最明顯的是
+          <code>4ab7b0dd</code>：13 → 28 → 14。第 3 輪 LLM 接管 ntdll 之後，
+          樣本走的是另一條更短的路。累積畫法在數字會下降時沒有意義，
+          所以圖表用每輪各自獨立的長條，旁邊標增減（<code>+15</code> / <code>−14</code>）。
+        </span>
+        <span class="lim-side">影響：所有樣本</span>
+      </li>
+
+      <li>
+        <span class="lim-title">兩支用對數刻度，長條高度差 ≠ 倍數差</span>
+        <span class="lim-body">
+          <code>21080a1c</code>（229 → 199,941）與 <code>c6a4ffb8</code>（325 → 6,797）
+          跨了兩到三個數量級。線性刻度會把小的那幾根壓成看不見的一條線，
+          所以這兩支的縱軸改成對數，並且在圖上用<strong>紅字標示
+          <code>API（對數刻度）</code></strong>。看數字，不要看高度比例。
+        </span>
+        <span class="lim-side">影響：動態端 · 本批 2 支</span>
+      </li>
+
+      <li>
+        <span class="lim-title">最大的那個數字是失控迴圈，不是分析成果</span>
+        <span class="lim-body">
+          <code>21080a1c</code> 第 2 輪的 <strong>199,941</strong> 次呼叫是
+          <strong>LLM 呼叫失敗</strong>（<code>llm_call_failed</code>）之後撞上模擬器
+          API 上限的結果 —— 呼叫幾乎全集中在同一個輪詢迴圈裡。
+          <strong>它不是「跑得比較深」，是「卡在原地卡了二十萬次」。</strong>
+          網站上那一輪的面板有紅色警語，不會讓它看起來像好結果。
+        </span>
+        <span class="lim-side">影響：動態端 · 1 支 1 輪</span>
+      </li>
+
+      <li>
+        <span class="lim-title">逐輪的「新增／消失 API」不是完整軌跡的差集</span>
+        <span class="lim-body">
+          run 報告只帶<strong>最後一輪</strong>的完整 API 軌跡（<code>api_trace_final</code>），
+          前面幾輪的完整序列沒有留存。所以面板上的「新增／消失」是就
+          <strong>外圈那一輪實際碰到的 API 名單</strong>算的 —— 攔截清單、合成回答、
+          LLM 宣告參數個數、派送例外、呼叫慣例修正、帶了字串引數的呼叫。
+          長條的高度（呼叫次數）才是完整計數。這個界線在每一個面板裡都寫著。
+        </span>
+        <span class="lim-side">影響：動態端 · 全部</span>
+      </li>
+
+      <li>
+        <span class="lim-title">停下來的理由多半是守衛，不是收斂</span>
+        <span class="lim-body">
+          外圈有兩道守衛：<code>no_behaviour_change</code>（這一輪跟上一輪的軌跡指紋一樣）
+          與 <code>no_progress</code>（連續幾輪沒有推進）。本批六支裡有
+          <strong>四支</strong>是被這兩道停下來的。
+          <strong>「停了」不等於「跑完了」</strong> —— 它只代表外圈判定再跑也不會不同。
+        </span>
+        <span class="lim-side">影響：動態端 · 本批 4 支</span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ==================================================== 驗證工具 -->
+  <section class="section">
+    <h2>三支驗證工具<span class="h2-note">它們不能互相取代</span></h2>
+    <p class="lede small">
+      「我覺得它跑對了」不是驗收標準。這三支各自把一個模糊的疑問變成可以印出來的結果，
+      而且各自有明確的盲區 —— 盲區才是重點。
+    </p>
+
+    <div class="table-wrap" style="margin-top:14px">
+      <table class="data" style="min-width:760px">
+        <thead>
+          <tr>
+            <th>工具</th>
+            <th>回答什麼</th>
+            <th>需要標準答案嗎</th>
+            <th>盲區</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="m">verify_groundtruth.py</td>
+            <td>抓得準不準 —— 算出 precision 與 recall 兩個數字。
+                關鍵設計是<strong>噪音基準線</strong>：一支什麼檢測都不做的負例，
+                它被偵測到的集合就是 CRT 啟動碼造成的噪音，其他樣本一律先扣掉這一層再算。</td>
+            <td><strong>需要</strong></td>
+            <td>只能用在自己寫的驗收樣本上。<strong>對真實惡意程式完全用不上</strong> ——
+                真實樣本沒有標準答案。</td>
+          </tr>
+          <tr>
+            <td class="m">validate_report.py</td>
+            <td>報告符不符合契約：schema、必填欄位、enum 範圍、
+                每個工具都有明確 status（沒有靜默的空欄位）、重跑的
+                <code>content_sha256</code> 是否一致。</td>
+            <td>不需要</td>
+            <td>假資料<strong>若連摘要一起重算</strong>，它會放行。
+                它證明的是「沒被事後改過」，不是「內容是真的」。</td>
+          </tr>
+          <tr>
+            <td class="m">verify_evidence.py</td>
+            <td><strong>報告說的東西是不是真的在檔案裡</strong>。刻意不重用流水線的程式碼：
+                自己開檔讀位元組、自己用 pefile 重新解析匯入表、自己重跑 YARA。
+                報告說抓到某個 C2，那個字串就必須真的在樣本的位元組裡。</td>
+            <td>不需要</td>
+            <td><strong>不回答「有沒有漏抓」</strong> —— 那需要外部參照。
+                也不看摘要，所以改掉數字但沒重算摘要的情況它抓不到。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:16px">
+      <div class="note warn">
+        <h4>兩個具體的漏網情境</h4>
+        <ul class="tight small">
+          <li>把假的 C2 塞進報告、<strong>並用專案自己的摘要函式重算 <code>content_sha256</code></strong>
+            → validate_report 判定「未被竄改」，只有 verify_evidence 抓得到。</li>
+          <li>改掉 <code>derived</code> 裡的某個數字但沒重算摘要
+            → verify_evidence 不看摘要，只有 validate_report 抓得到。</li>
+        </ul>
+        <p class="small" style="margin-bottom:0">所以真實樣本的驗證要兩支都跑。</p>
+      </div>
+      <div class="note bad">
+        <h4>verify_evidence 自己出過四次誤報</h4>
+        <p class="small">
+          它天生假設「報告裡的字串應該以明文存在於原始檔」。這個假設在
+          <strong>解殼後的檔案、zlib 壓進 overlay 的 PyInstaller 腳本、超長被截斷的字串、
+          以及執行期才解密的內容</strong>四種情況下都不成立，每一種都害它誤指流水線在編造。
+        </p>
+        <p class="small" style="margin-bottom:0">
+          第四次冤枉的正好是那批樣本裡最有價值的一筆情報（一個會加密自己 C2 的樣本）。
+          <strong>一個對最重要發現喊狼來了的檢查器，比沒有檢查器更糟。</strong>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================================================== 誠實限制 -->
+  <section class="section">
+    <h2>誠實限制<span class="h2-note">兩邊都做不到的事</span></h2>
+    <p class="lede small">
+      這一節列的是已知會失敗的地方。工具的真實上限跟解析失敗是兩件事，
+      分不清楚的話，一份「什麼都沒抓到」的報告會被誤讀成「這支樣本很乾淨」。
+    </p>
+
+    <ul class="limits" style="margin-top:16px">
+
+      <li>
+        <span class="lim-title">VMProtect / PELock 解不開</span>
+        <span class="lim-body">
+          被商業保護器包起來的樣本，靜態端解不開殼。反編譯 packer stub 沒有意義，
+          所以 Ghidra 那一步<strong>直接跳過</strong>，報告會標成證據不完整。
+          本批的 <code>4ab7b0dd</code> 就是這種：檢測點只剩 6 個、capa 只有 4 項 ——
+          <strong>那是「看不到」，不是「沒有」</strong>。
+        </span>
+        <span class="lim-side">影響：靜態端 · 本批 1 支</span>
+      </li>
+
+      <li>
+        <span class="lim-title">PyArmor 之類的二次混淆</span>
+        <span class="lim-body">
+          PyInstaller 打包的樣本可以解出 CArchive，但如果 PYZ 又被 PyArmor 混淆過，
+          模組名一個都取不回來，只剩 <code>.pyd</code> 這一層還看得見。
+          報告會把 <code>obfuscator</code> 標出來 —— 這是工具的真實上限，不是解析失敗，
+          兩者必須在報告裡分得開。
+        </span>
+        <span class="lim-side">影響：靜態端</span>
+      </li>
+
+      <li>
+        <span class="lim-title">執行期才解密的 C2，靜態抓不到；模擬走不到那裡也抓不到</span>
+        <span class="lim-body">
+          C2 被加密藏在資料段時，明文掃描一定漏。字串抽取工具能還原一部分
+          （本站 <code>787f2b0c</code> 的 <code>source=decoded</code> 那一筆就是），
+          但那條路徑只在解密邏輯夠簡單時走得通。真正的解法是讓樣本自己跑到解密那一行 ——
+          而那正是動態端在做的事，也正是<strong>純 Speakeasy 基線大多做不到</strong>的事。
+        </span>
+        <span class="lim-side">影響：兩端</span>
+      </li>
+
+      <li>
+        <span class="lim-title">Speakeasy 的 API 覆蓋率是硬上限</span>
+        <span class="lim-body">
+          模擬器沒實作到的 API 一碰到就中止。本批六支裡有兩支停在
+          <code>kernel32.FlsGetValue2</code>，各自只跑了 36 個 API 就結束 ——
+          那不是樣本的行為結束了，是模擬器走不下去了。
+          補值可以讓它繼續跑，但補出來的值無法驗證，所以那樣的結果必須標成
+          <code>inconclusive</code>，不能當成通過。
+        </span>
+        <span class="lim-side">影響：動態端 · 本批 2 支</span>
+      </li>
+
+      <li>
+        <span class="lim-title">只跑 DllMain 會漏掉大部分行為</span>
+        <span class="lim-body">
+          DLL 的實際功能通常不放在 DllMain 裡。本站 <code>787f2b0c</code> 有對照：
+          只跑 DllMain 是 <strong>20 個 API</strong>，跑全部匯出函式是 <strong>58 個</strong>。
+          正式數據採用後者。這也代表任何「只看 entry point」的工具在 DLL 上都會嚴重低估。
+        </span>
+        <span class="lim-side">影響：動態端 · 本批 1 支</span>
+      </li>
+
+      <li>
+        <span class="lim-title"><code>content_sha256</code> 防損壞，不防造假</span>
+        <span class="lim-body">
+          它是<strong>不帶密鑰</strong>的自我摘要。任何人都可以改掉報告內容、
+          再用專案自己的函式重算一次摘要，閘門就會判定「未被竄改」。
+          它能證明的只有「這份 JSON 沒有在傳輸或編輯中損壞」。
+          要證明內容是真的，得靠 <code>verify_evidence.py</code> 那條獨立路徑。
+        </span>
+        <span class="lim-side">影響：驗證層</span>
+      </li>
+
+      <li>
+        <span class="lim-title">六支樣本不足以下任何統計結論</span>
+        <span class="lim-body">
+          本站的數字是逐支樣本的觀察紀錄，不是量測結果。
+          「Speakeasy 對反偵測樣本的成功率」這種話，六支樣本說不出來。
+        </span>
+        <span class="lim-side">影響：整體</span>
+      </li>
+
+      <li>
+        <span class="lim-title">沒有做過網路隔離，只做到「未被原生執行」</span>
+        <span class="lim-body">
+          動態分析期間 VM 是連通的 —— 要打 HTTPS 到 LLM 端點。
+          能說的只有「樣本的機器碼跑在虛擬 CPU 上、網路 API 由 handler 假造，
+          樣本從頭到尾沒有真的 socket」。<strong>不要宣稱做過網路隔離。</strong>
+        </span>
+        <span class="lim-side">影響：動態端</span>
+      </li>
+
+    </ul>
+  </section>
+
+  <!-- ==================================================== 資料處理 -->
+  <section class="section">
+    <h2>這個站的資料怎麼產生的</h2>
+    <p class="lede small">
+      <code>tools/build-data.py</code> 從兩個來源讀取、過濾、輸出到 <code>data/</code>，可以重跑。
+      <strong>這支腳本是安全邊界</strong> —— 過濾在它裡面做，不是靠前端不顯示。
+    </p>
+
+    <div class="grid grid-2" style="margin-top:14px">
+      <div class="card">
+        <h3 style="margin-top:0">被排除的欄位</h3>
+        <ul class="tight small muted">
+          <li><code>derived.untrusted.*</code> —— 抽取出的字串與反編譯碼。
+            <strong>整區刪掉</strong>，一個欄位都不留。</li>
+          <li>字串抽取工具的字串內容（只留 counts）</li>
+          <li>Ghidra 的函式清單與反編譯簽章</li>
+          <li>YARA 命中的字串內容（只留規則名與命中條數）</li>
+          <li>C2 的未 defang 形式（<code>value</code> / <code>host</code>）</li>
+          <li>分析機的絕對路徑（<code>meta.source_path</code>、各工具的 <code>argv</code>）</li>
+        </ul>
+        <h4 style="margin-top:12px">動態端（mirage）另外排除</h4>
+        <ul class="tight small muted">
+          <li>模擬期間掃到的記憶體字串與我方注入的字串</li>
+          <li>樣本傳給 API 的<strong>字串引數的值</strong> —— 檔名、帳號密碼、C2 都在裡面。
+            只留 API 名稱</li>
+          <li>逐指令軌跡與那些位址上的原始位元組（那是樣本的機器碼）</li>
+          <li>例外的 traceback（含分析機的原始碼路徑與行號）</li>
+          <li>模擬器裡的完整檔案路徑與以 sha256 命名的模組區段名</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">為什麼要整區排除</h3>
+        <p class="small muted" style="margin-top:0">
+          樣本作者可以控制自己 binary 裡的字串與程式碼。那些內容可能夾帶第三方情報、
+          受害者資料，或針對讀報告的 LLM 寫的注入指令。
+          原始 schema 已經刻意把它們集中在一個欄位底下就是為了這件事 ——
+          消費端只要整個丟掉就安全。
+        </p>
+        <p class="small faint">
+          腳本用<strong>白名單</strong>複製欄位，而不是黑名單刪除。寫檔前它會自己掃一次輸出：
+          黑名單欄位、明文 URL scheme、Windows／Unix 絕對路徑、看起來像憑證的字串 ——
+          出現任何一個就中止，而且不寫出任何檔案。
+        </p>
+        <p class="small faint" style="margin-bottom:0">
+          LLM 的診斷文字是<strong>模型的輸出</strong>，不是樣本內容，所以有收錄；
+          但它可能複述樣本給它看的字串，所以當成不可信文字處理：
+          去控制字元、截長度、絕對路徑抹掉、URL scheme defang，
+          前端一律用 <code>textContent</code> 輸出而不是 <code>innerHTML</code>。
+        </p>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:16px">
+      <p class="small" style="margin-bottom:0">
+        這個站是純 HTML + CSS + 原生 JavaScript，沒有框架、沒有建置步驟、
+        <strong>沒有引用任何外部資源</strong>，圖表是手刻 SVG。
+        以 <code>file://</code> 直接開啟時 <code>fetch()</code> 會被擋掉，
+        會自動改讀同一份內容的 <code>data/data.js</code>。
+      </p>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <p>AIS3 專題資料瀏覽頁。純靜態，無外部資源，離線可開。</p>
+  </div>
+</footer>
+
+<script src="js/app.js"></script>
+<script>AIS3.markNav();</script>
+</body>
+</html>

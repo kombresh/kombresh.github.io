@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIS3 惡意程式分析專題 —— 資料瀏覽</title>
+<meta name="description" content="六支真實樣本在純 Speakeasy 模擬與靜態分析流水線下的結果對照。">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html">AIS3 惡意程式分析專題<span class="brand-sub">static intel × speakeasy</span></a>
+    <nav class="site-nav" aria-label="主選單">
+      <a href="index.html">總覽</a>
+      <a href="method.html">方法說明</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<div class="wrap">
+
+  <section class="hero">
+    <div class="rule-accent" aria-hidden="true"></div>
+    <h1>反分析的樣本，在模擬器裡走得完嗎？</h1>
+    <p class="hero-sub">
+      六支真實惡意樣本，先丟進 Speakeasy 直接模擬當基線，再用 LLM 逐輪捏造 API 回傳值把它推下去，
+      同時用靜態流水線抽出反分析檢測點 —— 看每多花一分力氣，換到多少行為。
+    </p>
+    <p class="hero-meta" id="hero-meta"></p>
+  </section>
+
+  <section class="section" id="tracks">
+    <h2>三組數據<span class="h2-note">前兩組有資料，第三組尚未取得</span></h2>
+    <p class="lede small" style="margin-bottom:16px">
+      這個專題的主軸是「多花的力氣換到多少行為」。三組數據是同一批樣本、逐步加條件的對照：
+      ① 什麼都不做直接丟進模擬器、② ＋動態（LLM 即時捏造 API 回傳值 ＋ 每輪修訂環境剖繪）、
+      ③ ＋動態＋靜態（靜態報告餵給動態端）。第三組還沒跑過 ——
+      <strong>沒有的就標成尚未取得，不用估計值填空</strong>。
+    </p>
+    <div class="grid grid-3" id="track-grid"></div>
+    <div id="mirage-banner" style="margin-top:18px"></div>
+  </section>
+
+  <section class="section dyn" id="samples">
+    <h2>樣本<span class="h2-note">點卡片看逐輪圖表</span></h2>
+    <p class="lede small" style="margin-bottom:14px">
+      每一支的詳情頁都有一張圖：橫軸是基線 → mirage 的每一輪 → ＋靜態（尚未取得），
+      縱軸是那一輪觀察到的 API 呼叫數。<strong>點任一根長條</strong>會展開那一輪
+      多了／少了哪些 API、LLM 產出了什麼讓它能進到下一輪、以及那一輪的結局判定。
+    </p>
+    <div class="grid grid-samples" id="sample-grid"></div>
+  </section>
+
+  <section class="section sta" id="overview">
+    <h2>跨樣本總覽<span class="h2-note">三組對照並排 · 右半來自靜態分析</span></h2>
+    <div id="overview-table"></div>
+    <p class="small faint" style="margin-top:10px">
+      ① 是純 Speakeasy 基線、② 是 mirage（＋動態）、③ 是 ＋動態＋靜態 —— 第三組還沒有資料。
+      ② 的「每輪 API」是每一輪各自的計數，<strong>不是累積</strong>；標了「對數」的兩支，
+      輪與輪之間跨了兩到三個數量級。
+      「檢測點」是靜態端在匯入表／字串裡認出的反分析相關 API 數；「分類」是這些檢測點落在幾個行為類別。
+      「C2」欄的括號內是非 benign 的筆數 —— 白名單過的 CDN／憑證撤銷清單網域不算。
+      加殼為「是」的那支，靜態端的欄位是<strong>證據不完整</strong>的：解不開殼就看不到裡面。
+    </p>
+  </section>
+
+  <section class="section" id="safety">
+    <h2>這個站放了什麼、沒放什麼</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3 style="margin-top:0">沒有放進來的東西</h3>
+        <ul class="tight small muted">
+          <li>樣本本體與任何原始位元組 —— 一個 byte 都沒有</li>
+          <li>從樣本記憶體／檔案抽出的字串內容（只留條數）</li>
+          <li>反編譯出來的程式碼與函式簽章</li>
+          <li>YARA 命中的字串內容（只留規則名與命中條數）</li>
+          <li>可直接點擊的 C2 —— 一律以 <code>hxxp://</code>、<code>[.]</code> 形式呈現</li>
+          <li>動態端：模擬期間的記憶體字串、樣本傳給 API 的<strong>字串引數</strong>
+            （檔名、帳密、C2 都在裡面）、逐指令軌跡與原始位元組 —— 只留 API 名稱與計數</li>
+          <li>分析機與模擬器裡的絕對路徑</li>
+        </ul>
+        <p class="small faint" style="margin-bottom:0">
+          LLM 的診斷文字有收錄，但當成<strong>不可信文字</strong>處理：路徑抹掉、URL scheme defang、
+          前端只用 <code>textContent</code> 輸出。
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">過濾在哪裡做</h3>
+        <p class="small muted" style="margin-top:0">
+          在 <code>tools/build-data.py</code>，不是靠前端不顯示。那支腳本用白名單複製欄位，
+          寫檔前會自己掃一次輸出：黑名單欄位或明文 URL scheme 只要出現一個，
+          就直接中止而且不寫出任何檔案。
+        </p>
+        <p class="small faint" style="margin-bottom:0">
+          理由：樣本作者可以控制自己 binary 裡的字串。那些內容可能夾帶第三方情報、
+          受害者資料，或針對讀報告的 LLM 寫的注入指令。
+        </p>
+      </div>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <p>AIS3 專題資料瀏覽頁。純靜態，無外部資源，離線可開。</p>
+    <p id="foot-meta"></p>
+  </div>
+</footer>
+
+<script src="js/app.js"></script>
+<script src="js/index.js"></script>
+</body>
+</html>
