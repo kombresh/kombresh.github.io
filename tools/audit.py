@@ -651,7 +651,11 @@ PY_LAUNCHER = re.compile(r"(?<![\w.\-/\\])py\s+(-m\s+[\w.]+|[\w./\\-]+\.py)")
 # `python3` 本身在 Linux／CI 上是對的寫法。真正該警告的是「只寫了 python3、
 # 沒有同時給 Windows 的 py」。所以往上下各看幾行：附近有 py 的替代寫法就放行。
 # 不這樣做的話，一份正確地把兩種平台都寫清楚的文件反而會被自己的稽核擋下來。
-PY_HINT_WINDOW = 4
+#
+# 視窗要多大：文件裡把兩種平台分開寫時，中間會夾著小標題與 code fence 的
+# 前後兩行 —— README 實測是隔 6 行。設 8 行容得下這種寫法，又不會寬到把
+# 文件另一節裡孤立的 `python3` 也一起放過。
+PY_HINT_WINDOW = 8
 
 
 def check_c8_python_invocation(root, fnd):
