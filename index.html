@@ -34,23 +34,26 @@
   </section>
 
   <section class="section" id="tracks">
-    <h2>三組數據<span class="h2-note">前兩組有資料，第三組尚未取得</span></h2>
+    <h2>三組數據<span class="h2-note">三組都有資料了</span></h2>
     <p class="lede small" style="margin-bottom:16px">
       這個專題的主軸是「多花的力氣換到多少行為」。三組數據是同一批樣本、逐步加條件的對照：
       ① 什麼都不做直接丟進模擬器、② ＋動態（LLM 即時捏造 API 回傳值 ＋ 每輪修訂環境剖繪）、
-      ③ ＋動態＋靜態（靜態報告餵給動態端）。第三組還沒跑過 ——
-      <strong>沒有的就標成尚未取得，不用估計值填空</strong>。
+      ③ ＋動態＋靜態（靜態報告派生的環境剖繪與模擬預算餵給動態端）。
+      <strong>③ 和 ① ② 不是同一個批次</strong>，所以它自己帶了一組同批的對照
+      （空 profile ＋ 預設預算），要比就比那兩欄 —— 跨批次比較會把批次差異算成靜態情報的功勞。
     </p>
     <div class="grid grid-3" id="track-grid"></div>
     <div id="mirage-banner" style="margin-top:18px"></div>
+    <div id="handoff-banner" style="margin-top:14px"></div>
   </section>
 
   <section class="section dyn" id="samples">
     <h2>樣本<span class="h2-note">點卡片看逐輪圖表</span></h2>
     <p class="lede small" style="margin-bottom:14px">
-      每一支的詳情頁都有一張圖：橫軸是基線 → mirage 的每一輪 → ＋靜態（尚未取得），
-      縱軸是那一輪觀察到的 API 呼叫數。<strong>點任一根長條</strong>會展開那一輪
-      多了／少了哪些 API、LLM 產出了什麼讓它能進到下一輪、以及那一輪的結局判定。
+      每一支的詳情頁有兩張圖：第一張的橫軸是基線 → mirage 的每一輪，第二張是第三組的
+      同批對照（normal 與 static-profile 逐輪並排）。縱軸都是那一輪觀察到的 API 呼叫數。
+      <strong>點任一根長條</strong>會展開那一輪多了／少了哪些 API、LLM 產出了什麼讓它
+      能進到下一輪、以及那一輪的結局判定。
     </p>
     <div class="grid grid-samples" id="sample-grid"></div>
   </section>
@@ -59,9 +62,12 @@
     <h2>跨樣本總覽<span class="h2-note">三組對照並排 · 右半來自靜態分析</span></h2>
     <div id="overview-table"></div>
     <p class="small faint" style="margin-top:10px">
-      ① 是純 Speakeasy 基線、② 是 mirage（＋動態）、③ 是 ＋動態＋靜態 —— 第三組還沒有資料。
+      ① 是純 Speakeasy 基線、② 是 mirage（＋動態）、③ 是 ＋動態＋靜態。
       ② 的「每輪 API」是每一輪各自的計數，<strong>不是累積</strong>；標了「對數」的兩支，
       輪與輪之間跨了兩到三個數量級。
+      ③ 的兩個數字是<strong>同一批次裡</strong>「空 profile → 靜態派生 profile」的變化，
+      不能拿去跟 ② 比；而且那一批只套用了 profile 與模擬預算，靜態端同時產出的
+      建議 watchlist 沒有進場，所以 ③ 是對交接機制的<strong>部分</strong>驗證。
       「檢測點」是靜態端在匯入表／字串裡認出的反分析相關 API 數；「分類」是這些檢測點落在幾個行為類別。
       「C2」欄的括號內是非 benign 的筆數 —— 白名單過的 CDN／憑證撤銷清單網域不算。
       加殼為「是」的那支，靜態端的欄位是<strong>證據不完整</strong>的：解不開殼就看不到裡面。

@@ -67,6 +67,7 @@
     append(root,
       head(s),
       chartSection(s, data),
+      handoffSection(s, data),
       mirageSection(s),
       speakeasySection(s),
       staticSection(s),
@@ -114,11 +115,16 @@
   /* 一支樣本一張圖：
    *   第 0 格   純 Speakeasy 基線（依進入點分段）
    *   第 1..N 格 mirage 的每一輪（各自獨立的計數，不累積）
-   *   最後一格  ＋動態＋靜態 —— 尚未取得，虛線佔位
-   * 點任一格會在下面的面板展開那一格的細節。
+   *
+   * 第三組（＋動態＋靜態）刻意**不畫在這張圖裡**。它是另一個批次、另一組參數
+   * 的配對實驗，把它的數字插在這條軸上會讓人拿它去比第二組 —— 而那兩個數字之間
+   * 的差異有一部分來自批次與參數，不是來自靜態情報。第三組有自己的圖，就在下面
+   * 一段，並且一定跟它同批的對照組並排。
+   * 沒有第三組資料時，這裡仍然保留一格虛線佔位（不編數字）。
    */
   function buildBars(s) {
     var dyn = s.dynamic || {};
+    var hf = s.handoff || {};
     var bars = [{
       kind: 'baseline',
       key: 'base',
@@ -137,13 +143,15 @@
         round: r
       });
     });
-    bars.push({
-      kind: 'ghost',
-      key: 'ghost',
-      label: '＋靜態',
-      sub: '尚未取得',
-      value: null
-    });
+    if (!hf.available) {
+      bars.push({
+        kind: 'ghost',
+        key: 'ghost',
+        label: '＋靜態',
+        sub: '尚未取得',
+        value: null
+      });
+    }
     return bars;
   }
 
@@ -158,8 +166,12 @@
     sec.appendChild(h);
 
     sec.appendChild(el('p', 'lede small',
-      '橫軸左邊第一根是純 Speakeasy 基線，接下來是 mirage 外圈的每一輪，' +
-      '最後一根是「＋動態＋靜態」那一組 —— 尚未取得，所以是空的。' +
+      '橫軸左邊第一根是純 Speakeasy 基線，接下來是 mirage 外圈的每一輪。' +
+      ((s.handoff || {}).available
+        ? '第三組（＋動態＋靜態）不畫在這張圖裡 —— 它是另一批次、另一組參數的' +
+          '配對實驗，插進這條軸會讓人誤以為可以直接比。它有自己的圖，在下一段，' +
+          '而且一定跟同批的對照組並排。'
+        : '最後一根是「＋動態＋靜態」那一組 —— 尚未取得，所以是空的。') +
       '每一根長條都是那一輪各自的計數，不是累積：' +
       '迭代之間的 API 數不是單調遞增，累積畫法在數字下降時沒有意義。'));
 
@@ -207,9 +219,12 @@
     append(l0, i0, el('span', null, '純 Speakeasy 基線'));
     var l1 = el('span'); l1.appendChild(el('i'));
     l1.appendChild(el('span', null, 'mirage 的每一輪'));
-    var l2 = el('span'); l2.appendChild(el('i', 'ghost-key'));
-    l2.appendChild(el('span', null, '＋動態＋靜態：尚未取得'));
-    append(legend, l0, l1, l2);
+    append(legend, l0, l1);
+    if (!(s.handoff || {}).available) {
+      var l2 = el('span'); l2.appendChild(el('i', 'ghost-key'));
+      l2.appendChild(el('span', null, '＋動態＋靜態：尚未取得'));
+      legend.appendChild(l2);
+    }
     box.appendChild(legend);
 
     sec.appendChild(box);
@@ -301,7 +316,9 @@
     var xTitle = svgEl('text', {
       'class': 'axis-title', x: PL + plotW / 2, y: H - 6, 'text-anchor': 'middle'
     });
-    xTitle.textContent = '基線 → mirage 迭代輪次 → ＋靜態（尚未取得）';
+    xTitle.textContent = bars.some(function (b) { return b.kind === 'ghost'; })
+      ? '基線 → mirage 迭代輪次 → ＋靜態（尚未取得）'
+      : '基線 → mirage 迭代輪次';
     svg.appendChild(xTitle);
 
     var band = plotW / bars.length;
@@ -530,8 +547,10 @@
     return ul;
   }
 
-  function roundPanel(s, rd) {
-    var dyn = s.dynamic;
+  // dynSrc：這一輪屬於哪一次執行。第三組的 A/B 兩欄各有自己的 rounds，
+  // 但注意事項（scope_caveat）要跟著那一次執行走，不能一律拿 s.dynamic 的。
+  function roundPanel(s, rd, dynSrc) {
+    var dyn = dynSrc || s.dynamic;
     var f = A.frag();
 
     var rv = A.roundVerdictInfo(rd.verdict);
@@ -775,6 +794,262 @@
       '靜態報告本身在這一頁下面已經有了，缺的是「把它接上去之後的結果」。'));
     f.appendChild(box);
     return f;
+  }
+
+  // ------------------------------------------------- 第三組：同批 A/B 對照
+
+  var HF_KIND = { decisive: 'ok', minor: 'warn', none: 'muted' };
+
+  /* 這一段的設計原則：
+   *   1. 兩欄一定並排。只放 static-profile 的數字就是在誘導誤讀。
+   *   2. 「靜態端派生了什麼」與「有沒有被套用」要分開講 —— 這一批的 watchlist
+   *      產生了卻沒進場，那是結論的最大限制，不能只寫在小字裡。
+   *   3. 判定字串不是分數。inconclusive → no_progress 是停下來的理由變了。
+   */
+  function handoffSection(s, data) {
+    var hf = s.handoff || {};
+    var sec = el('section', 'section sta');
+    var h = el('h2', null, '第三組：靜態情報餵給動態端');
+    h.appendChild(el('span', 'h2-note',
+      hf.available ? '同批 A/B 對照' : '尚未取得'));
+    sec.appendChild(h);
+
+    if (!hf.available) {
+      var pb = el('div', 'pending-box');
+      pb.appendChild(el('p', null,
+        '這一支沒有第三組的配對資料' +
+        (hf.why ? '（' + hf.why + '）' : '') + '，所以沒有數字 —— 也不會有估計值。'));
+      sec.appendChild(pb);
+      return sec;
+    }
+
+    var d = hf.delta, dv = hf.derivation, cond = hf.conditions;
+
+    sec.appendChild(el('p', 'lede small', (hf.notes || {}).pairing || ''));
+
+    // ---- watchlist 沒進場：這是整組結論的最大限制
+    if (!dv.watchlist_seeded && (dv.suggested_watchlist || []).length) {
+      var wn = el('div', 'note warn');
+      wn.style.marginBottom = '16px';
+      wn.appendChild(el('p', null, (hf.notes || {}).watchlist || ''));
+      sec.appendChild(wn);
+    }
+
+    // ---- 兩張卡：靜態端給了什麼 / 結果差多少
+    var grid = el('div', 'hf-grid');
+
+    var c1 = el('div', 'hf-card');
+    c1.appendChild(el('h3', null, '靜態端派生出什麼'));
+    if ((dv.profile_flags || []).length) {
+      (dv.profile_flags || []).forEach(function (fl) {
+        var row = el('div', 'hf-flag');
+        var top = el('div');
+        top.appendChild(el('code', null, fl.key));
+        top.appendChild(el('span', 'seg-n', '= ' + fl.value));
+        row.appendChild(top);
+        if ((fl.evidence || []).length) {
+          row.appendChild(el('p', 'small faint',
+            '證據：樣本會呼叫 ' + fl.evidence.join('、')));
+        }
+        c1.appendChild(row);
+      });
+    } else {
+      c1.appendChild(el('p', 'small faint',
+        '這一支沒有派生出任何環境旗標 —— 靜態報告裡沒有足以支撐旗標的檢測點，' +
+        '所以初始 profile 是空的，只有模擬預算被改。'));
+    }
+    var kvs = [
+      ['模擬預算', A.num(cond.control.budget_seconds) + ' → ' +
+                   A.num(cond.treated.budget_seconds) + ' 秒'],
+      ['輪數上限', A.num(cond.treated.max_iters)],
+      ['建議 watchlist', (dv.suggested_watchlist || []).length + ' 條' +
+                         (dv.watchlist_seeded ? '（已套用）' : '（未套用）')]
+    ];
+    c1.appendChild(A.kv(kvs));
+    if ((dv.suggested_watchlist || []).length) {
+      var det = el('details');
+      det.appendChild(el('summary', 'small muted',
+        '看那 ' + dv.suggested_watchlist.length + ' 條建議清單'));
+      det.appendChild(A.tagList(dv.suggested_watchlist));
+      c1.appendChild(det);
+    }
+    grid.appendChild(c1);
+
+    var c2 = el('div', 'hf-card');
+    c2.appendChild(el('h3', null, '結果差多少'));
+    var meta = (data && data.handoff_meta) || {};
+    var clsInfo = ((meta.classes || {})[d.classification]) || {};
+    var pr2 = el('div', 'pill-row');
+    pr2.appendChild(pill(clsInfo.label || d.classification,
+                         HF_KIND[d.classification] || 'muted'));
+    if (d.identical_rounds) pr2.appendChild(pill('逐輪數字完全相同', 'muted'));
+    c2.appendChild(pr2);
+    c2.appendChild(A.kv([
+      ['最深呼叫數', A.num(d.deepest_control) + ' → ' + A.num(d.deepest_treated)],
+      ['末輪相異 API', A.num(d.distinct_control) + ' → ' + A.num(d.distinct_treated)],
+      ['輪數', A.num(d.iters_control) + ' → ' + A.num(d.iters_treated)],
+      ['判定', d.reason_control + ' → ' + d.reason_treated]
+    ]));
+    if (clsInfo.blurb) c2.appendChild(el('p', 'small faint', clsInfo.blurb));
+    if (d.verdict_control !== d.verdict_treated) {
+      var vn = el('div', 'note warn');
+      vn.appendChild(el('p', 'small', (hf.notes || {}).verdict || ''));
+      c2.appendChild(vn);
+    }
+    grid.appendChild(c2);
+    sec.appendChild(grid);
+
+    // ---- 配對長條圖
+    var box = el('div', 'chart-box');
+    var panel = el('div', 'detail-panel');
+    var state = { active: null, buttons: [], groups: [], sample: s };
+    box.appendChild(pairedChart(s, hf, state, panel));
+
+    var lg = el('div', 'chart-legend');
+    var a1 = el('span'); var ia = el('i');
+    ia.style.background = 'var(--dyn)';
+    append(a1, ia, el('span', null,
+      'normal：空 profile ＋ budget ' + A.num(cond.control.budget_seconds) + 's'));
+    var a2 = el('span'); var ib = el('i');
+    ib.style.background = 'var(--sta)';
+    append(a2, ib, el('span', null,
+      'static-profile：靜態派生的 profile ＋ budget ' +
+      A.num(cond.treated.budget_seconds) + 's'));
+    append(lg, a1, a2);
+    box.appendChild(lg);
+    sec.appendChild(box);
+
+    handoffHint(panel);
+    sec.appendChild(panel);
+
+    var foot = el('p', 'small faint');
+    foot.textContent = 'run ' + cond.control.run + '（normal）／' +
+      cond.treated.run + '（static-profile）　批次 ' +
+      (hf.batch_generated_at || '?') +
+      '　commit ' + String(hf.commit || '?').slice(0, 12) +
+      (cond.control.profile_as_designed && cond.treated.profile_as_designed
+        ? '　初始 profile 與設計一致（已核對）'
+        : '　⚠ 初始 profile 與設計不符');
+    sec.appendChild(foot);
+    return sec;
+  }
+
+  function handoffHint(panel) {
+    clear(panel);
+    panel.classList.remove('is-pending');
+    var f = A.frag();
+    f.appendChild(el('h3', null, '點任一根長條'));
+    f.appendChild(el('p', 'dp-sub',
+      '會在這裡展開那一輪的細節：新增／消失的 API、LLM 這一輪產出了什麼、' +
+      '以及停下來的理由。左右兩欄可以逐輪對照。'));
+    panel.appendChild(f);
+  }
+
+  /* 分組長條圖：一輪一組，組內兩根（normal / static-profile）。
+   * 兩欄共用同一個刻度 —— 不共用就沒有比較的意義。
+   */
+  function pairedChart(s, hf, state, panel) {
+    var ctl = hf.control || {}, trt = hf.treated || {};
+    var cr = ctl.rounds || [], tr = trt.rounds || [];
+    var nGroups = Math.max(cr.length, tr.length);
+    if (!nGroups) return el('div', 'pending-box', '這一組沒有逐輪資料。');
+
+    var vals = [];
+    cr.concat(tr).forEach(function (r) {
+      if (r && r.n_apis > 0) vals.push(r.n_apis);
+    });
+    var hi = Math.max.apply(null, vals.concat([1]));
+    var lo = Math.min.apply(null, vals.concat([hi]));
+    var isLog = lo > 0 && hi / lo >= 20;
+
+    var W = 780, H = 300, PL = 62, PR = 16, PT = 18, PB = 52;
+    var plotW = W - PL - PR, plotH = H - PT - PB;
+
+    function y(v) {
+      if (!v || v <= 0) return PT + plotH;
+      var f = isLog
+        ? Math.log10(v + 1) / Math.log10(hi * (isLog ? 1.6 : 1.15) + 1)
+        : v / (hi * 1.15);
+      return PT + plotH - f * plotH;
+    }
+
+    var svg = svgEl('svg', {
+      'class': 'chart-svg is-paired',
+      viewBox: '0 0 ' + W + ' ' + H,
+      preserveAspectRatio: 'xMidYMid meet',
+      role: 'img',
+      'aria-label': 'normal 與 static-profile 逐輪 API 呼叫數對照' +
+                    (isLog ? '（對數刻度）' : '')
+    });
+
+    // 軸
+    svg.appendChild(svgEl('line', { 'class': 'axis-line', x1: PL,
+      y1: PT + plotH, x2: PL + plotW, y2: PT + plotH }));
+    svg.appendChild(svgEl('line', { 'class': 'axis-line', x1: PL, y1: PT,
+      x2: PL, y2: PT + plotH }));
+
+    var yt = svgEl('text', { 'class': 'axis-title' + (isLog ? ' is-log' : ''),
+      x: PL - 8, y: PT + 2, 'text-anchor': 'end' });
+    yt.textContent = isLog ? 'API（對數）' : 'API 呼叫數';
+    svg.appendChild(yt);
+    if (isLog) {
+      var badge = svgEl('text', { 'class': 'axis-title is-log', x: PL + 8,
+        y: PT + 2 });
+      badge.textContent = '⚠ 縱軸為對數刻度，高度差 ≠ 倍數差';
+      svg.appendChild(badge);
+    }
+
+    var band = plotW / nGroups;
+    var bw = Math.min(56, band * 0.30);
+    var base = PT + plotH;
+
+    for (var gi = 0; gi < nGroups; gi++) {
+      var cx = PL + band * gi + band / 2;
+
+      var xl = svgEl('text', { 'class': 'axis-text', x: cx,
+        y: base + 20, 'text-anchor': 'middle' });
+      xl.textContent = '第 ' + (gi + 1) + ' 輪';
+      svg.appendChild(xl);
+
+      var pairs = [
+        [cr[gi], 'ctl', 'var(--dyn)', 'normal', ctl, -1],
+        [tr[gi], 'trt', 'var(--sta)', 'static-profile', trt, 1]
+      ];
+      pairs.forEach(function (p) {
+        var rd = p[0];
+        var x0 = cx + p[5] * (bw / 2 + 2) - bw / 2;
+        if (!rd) {
+          // 那一欄沒有這一輪 —— 畫虛線空框，不要留白讓人以為是 0
+          svg.appendChild(svgEl('rect', {
+            'class': 'seg-empty', x: x0, y: base - plotH * 0.06,
+            width: bw, height: plotH * 0.06, rx: 2 }));
+          return;
+        }
+        var top = y(rd.n_apis);
+        var key = p[1] + (gi + 1);
+        var g = svgEl('g', {
+          class: 'seg', tabindex: '0', role: 'button',
+          'aria-label': p[3] + ' 第 ' + (gi + 1) + ' 輪，' +
+                        A.num(rd.n_apis) + ' 個 API'
+        });
+        var rect = svgEl('rect', { x: x0, y: top, width: bw,
+          height: Math.max(2, base - top), rx: 2 });
+        rect.setAttribute('fill', p[2]);
+        g.appendChild(rect);
+        var t = svgEl('text', { 'class': 'bar-label', x: x0 + bw / 2,
+          y: top - 6, 'text-anchor': 'middle' });
+        t.textContent = A.num(rd.n_apis);
+        g.appendChild(t);
+        (function (rd2, src, k) {
+          bind(g, k, state, panel, function () {
+            return roundPanel(s, rd2, src);
+          });
+        })(rd, p[4], key);
+        state.groups.push({ key: key, node: g });
+        svg.appendChild(g);
+      });
+    }
+    return svg;
   }
 
   // ------------------------------------------------- mirage 這一次執行的全貌

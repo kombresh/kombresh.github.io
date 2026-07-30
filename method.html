@@ -91,7 +91,11 @@
         靜態端輸出的 <code>suggested_budget_seconds</code>、檢測點清單、以及
         <code>analysis_notes</code>（例如「有 TLS callback，主要邏輯可能不在 entry point」）
         就是要餵給動態端當起始條件的東西。
-        <strong>這一段整合目前還沒有跑過</strong> —— 本站第三組數據標成「尚未取得」，指的就是它。
+        <strong>這一段已經跑過了</strong>（2026-07-30 的配對批次），但只接上其中兩項：
+        由檢測點派生的環境旗標與模擬預算。第三項 ——
+        <strong>依檢測點產生的建議 watchlist —— 沒有被套用</strong>，
+        因為那一批的執行條件是「不預先種 optional watchlist」。
+        所以第三組是對交接機制的<strong>部分</strong>驗證。
       </p>
     </div>
   </section>
@@ -129,13 +133,43 @@
       </div>
       <div class="arch-box sta">
         <h3>③ ＋動態＋靜態</h3>
-        <p class="small muted">先跑靜態流水線，把結果餵給動態端當起始條件。</p>
+        <p class="small muted">
+          先跑靜態流水線，把派生的環境旗標與模擬預算餵給動態端當起始條件。
+        </p>
         <ul>
-          <li><strong>尚未取得</strong> —— 這一組沒有跑過</li>
-          <li>網站上它是虛線佔位，不會有任何數字</li>
-          <li>要問的是「少走幾輪冤枉路」，那需要跑過才知道</li>
+          <li>這一組是<strong>配對實驗</strong>：同六支、同一天、其他參數固定，
+            各跑一次「空 profile ＋ budget 60」與一次「靜態派生的 profile ＋ budget」</li>
+          <li>能比的是<strong>它自己的兩欄</strong>，不是拿它去比 ② ——
+            ② 是另一個批次、參數也不一樣</li>
+          <li>只有 profile 與 budget 被套用；建議 watchlist 沒進場</li>
         </ul>
       </div>
+    </div>
+
+    <div class="note warn" style="margin-top:16px">
+      <h4>為什麼第三組不畫在第二組的同一條軸上</h4>
+      <p>
+        因為那樣會把「批次與參數的差異」算成靜態情報的功勞。舉個實際的例子：
+        <code>21080a1c</code> 在第二組的最深一輪是 199,941 次呼叫，在第三組的
+        <code>normal</code> 欄是 88,254 次 —— 這兩個數字都是「同一個游標輪詢迴圈撞到
+        呼叫上限」，差別只在那一批的預算與上限設定。真正該比的是第三組自己的
+        88,254（空 profile）對 1,182（靜態派生的 profile）。
+      </p>
+      <p style="margin-bottom:0">
+        所以樣本詳情頁有兩張圖：第一張只放基線與第二組的每一輪，第二張是第三組的
+        <code>normal</code> 與 <code>static-profile</code> 逐輪並排。
+      </p>
+    </div>
+
+    <div class="note sta" style="margin-top:14px">
+      <h4>第三組的分級是規則算出來的，不是看圖說故事</h4>
+      <p style="margin-bottom:0">
+        <strong>決定性改善</strong>：最深呼叫數變化 5 倍以上，或末輪相異 API 多 5 支以上。
+        <strong>小幅改善</strong>：變化 1.5 倍以上，或相異 API 多 2 支以上。
+        <strong>無明顯變化</strong>：門檻以下（含逐筆完全相同）。
+        門檻寫在 <code>tools/build-data.py</code>，改了門檻整站的分級會一起變 ——
+        不會出現「文字說有效、數字說沒差」的情況。
+      </p>
     </div>
   </section>
 

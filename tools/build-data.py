@@ -86,6 +86,8 @@ def source_default(env_key, folder):
 DEFAULT_SPEAKEASY = source_default("AIS3_SPEAKEASY", "only-speakeasy")
 DEFAULT_INTEL = source_default("AIS3_INTEL", os.path.join("test", "reports"))
 DEFAULT_MIRAGE = source_default("AIS3_MIRAGE", "speakeasy+llm")
+# 第三組：同一批次、同一天、其他參數固定的 normal vs static-profile 對照實驗
+DEFAULT_LAST = source_default("AIS3_LAST", "last")
 DEFAULT_OUT = os.path.join(PAGE_ROOT, "data")
 
 # 一支樣本的長條圖裡，最大值 / 最小正值超過這個倍率就改用對數刻度。
@@ -794,6 +796,237 @@ def build_mirage(runs, baseline_apis):
 
 
 # --------------------------------------------------------------------------
+# 第三組：靜態情報餵給動態端（同批 A/B 對照）
+# --------------------------------------------------------------------------
+#
+# 這一組跟前兩組的性質不同，要講清楚，否則圖表會被誤讀：
+#
+#   * 前兩組（純 Speakeasy / ＋動態）是不同時期、參數不一致的執行紀錄。
+#   * 這一組是**同一天、同一批、其他參數固定**的配對實驗：同六支樣本各跑兩次，
+#     一次空 profile + budget 60，一次用靜態報告派生的 profile + budget。
+#
+# 所以「第三組 vs 第二組」不能直接比 —— 能比的是這一組自己的 normal vs
+# static-profile。網站上兩者要並排呈現，不能只放 static-profile 的數字。
+
+def _descend_to_manifest(dirpath):
+    """允許指到外層資料夾：`last/` 或 `last/last/` 都能找到 manifest.json。"""
+    if os.path.isfile(os.path.join(dirpath, "manifest.json")):
+        return dirpath
+    for name in sorted(os.listdir(dirpath)) if os.path.isdir(dirpath) else []:
+        cand = os.path.join(dirpath, name)
+        if os.path.isfile(os.path.join(cand, "manifest.json")):
+            return cand
+    return dirpath
+
+
+# `busy_desktop  <- ????:createtoolhelp32snapshot, process32first, process32next`
+# 冒號左邊那段中文在來源檔就已經是 U+FFFD（Big5 -> UTF-8 的有損轉換，位元組
+# 在寫檔前就毀了，任何編碼都解不回來）。右邊的 API 名單是 ASCII，還活著 ——
+# 只取那一段，壞掉的散文不要送上網站。
+_RE_DERIV = re.compile(r"^\s*([a-z_]+)\s*<-\s*(.*)$")
+_RE_APIS = re.compile(r"[a-z][a-z0-9_]{3,}")
+
+
+def parse_derivation_reasons(reasons):
+    """把 generated-profiles.json 的 reasons 轉成 {旗標: [API 證據]}。"""
+    out = {}
+    for line in reasons or []:
+        m = _RE_DERIV.match(str(line))
+        if not m:
+            continue
+        flag = m.group(1)
+        tail = m.group(2)
+        # 冒號之後才是 API 名單；沒有冒號就整段掃
+        if ":" in tail:
+            tail = tail.split(":", 1)[1]
+        apis = [a for a in _RE_APIS.findall(tail) if a != flag]
+        out[flag] = scrub_list(apis, 120, 16)
+    return out
+
+
+def load_last(dirpath):
+    """讀第三組。回傳 None 表示沒有這份資料（網站就退回「尚未取得」）。"""
+    if not dirpath or not os.path.isdir(dirpath):
+        return None
+    root = _descend_to_manifest(dirpath)
+    man_path = os.path.join(root, "manifest.json")
+    if not os.path.isfile(man_path):
+        return None
+    man = read_json(man_path)
+    if not man:
+        return None
+
+    profiles = {}
+    prof_path = os.path.join(root, "static-profile", "generated-profiles.json")
+    if os.path.isfile(prof_path):
+        for p in (read_json(prof_path) or {}).get("profiles") or []:
+            sha = p.get("sha256") or ""
+            if sha:
+                profiles[sha[:8]] = p
+
+    runs = {}
+    missing = []
+    for rep in man.get("reports") or []:
+        sha8 = (rep.get("sha_prefix")
+                or (rep.get("sha256") or "")[:8])
+        rel = (rep.get("json") or "").replace("/", os.sep)
+        path = os.path.join(root, rel)
+        if not sha8 or not os.path.isfile(path):
+            missing.append(rel or "(無路徑)")
+            continue
+        obj = read_json(path)
+        if not obj:
+            missing.append(rel)
+            continue
+        runs.setdefault(sha8, {})[rep.get("mode")] = {
+            "report": rep, "run": obj}
+    for rel in missing:
+        print("[-] 第三組缺這份 run：%s" % rel, file=sys.stderr)
+
+    return {
+        "root": root,
+        "commit": scrub(man.get("commit"), 48),
+        "generated_at": scrub(man.get("generated_at"), 48),
+        "conditions": man.get("conditions") or {},
+        "profiles": profiles,
+        "runs": runs,
+    }
+
+
+# 兩組之間的差距要用一致的規則分級，不是我看圖說故事。
+#   決定性：呼叫數變化 >= 5 倍，或末輪相異 API 多 >= 5 支
+#   小幅　：呼叫數變化 >= 1.5 倍，或相異 API 多 >= 2 支
+#   無變化：其餘（含逐筆相同）
+HANDOFF_DECISIVE_RATIO = 5.0
+HANDOFF_MINOR_RATIO = 1.5
+HANDOFF_DECISIVE_DISTINCT = 5
+HANDOFF_MINOR_DISTINCT = 2
+
+
+def classify_handoff(ctl_deep, trt_deep, ctl_distinct, trt_distinct):
+    ratio = 1.0
+    if ctl_deep and trt_deep:
+        ratio = max(ctl_deep, trt_deep) / float(min(ctl_deep, trt_deep))
+    gain = (trt_distinct or 0) - (ctl_distinct or 0)
+    if ratio >= HANDOFF_DECISIVE_RATIO or gain >= HANDOFF_DECISIVE_DISTINCT:
+        return "decisive"
+    if ratio >= HANDOFF_MINOR_RATIO or gain >= HANDOFF_MINOR_DISTINCT:
+        return "minor"
+    return "none"
+
+
+def _mode_conditions(rep):
+    prof = rep.get("actual_initial_profile") or {}
+    return {
+        "run": scrub(rep.get("run"), 64),
+        "budget_seconds": rep.get("budget_seconds"),
+        "max_iters": rep.get("max_iters"),
+        "deadline_seconds": rep.get("deadline_seconds"),
+        "profile_keys": scrub_list(sorted(prof.keys()), 64, 16),
+        "profile_empty": not prof,
+        "watchlist_seeded": bool(rep.get("watchlist_seeded")),
+        # 驗證欄位：期望與實際的初始 profile 是否一致（不一致代表實驗沒照設計跑）
+        "profile_as_designed":
+            (rep.get("expected_initial_profile") or {}) == prof,
+    }
+
+
+def build_handoff(sha8, last, baseline_apis):
+    if not last:
+        return {"available": False, "why": "沒有第三組的資料來源"}
+    pair = (last.get("runs") or {}).get(sha8) or {}
+    ctl_rec, trt_rec = pair.get("normal"), pair.get("static-profile")
+    if not ctl_rec or not trt_rec:
+        have = "、".join(sorted(pair)) or "都沒有"
+        return {"available": False,
+                "why": "這一支的配對不完整（只有 %s）" % have}
+
+    control = build_mirage([ctl_rec["run"]], baseline_apis)
+    treated = build_mirage([trt_rec["run"]], baseline_apis)
+
+    def deepest(m):
+        vals = [r["n_apis"] for r in m.get("rounds") or [] if r.get("n_apis")]
+        return max(vals) if vals else 0
+
+    def distinct(m):
+        return ((m.get("final_trace") or {}).get("distinct")
+                or (m.get("final_trace") or {}).get("n_distinct") or 0)
+
+    ctl_deep, trt_deep = deepest(control), deepest(treated)
+    ctl_dist, trt_dist = distinct(control), distinct(treated)
+
+    prof = (last.get("profiles") or {}).get(sha8) or {}
+    watchlist = scrub_list([api_key(x) for x in
+                            (prof.get("suggested_watchlist") or [])], 120, 64)
+    seeded = bool(prof.get("watchlist_seeded"))
+
+    derivation_flags = []
+    evidence = parse_derivation_reasons(prof.get("reasons"))
+    for k, v in sorted((prof.get("profile") or {}).items()):
+        derivation_flags.append({
+            "key": scrub(str(k), 64),
+            "value": scrub(str(v), 32),
+            "evidence": evidence.get(k) or [],
+        })
+
+    return {
+        "available": True,
+        "commit": last.get("commit"),
+        "batch_generated_at": last.get("generated_at"),
+        "control": control,
+        "treated": treated,
+        "conditions": {
+            "control": _mode_conditions(ctl_rec["report"]),
+            "treated": _mode_conditions(trt_rec["report"]),
+        },
+        "derivation": {
+            # 靜態端派生出來的三樣東西，以及各自有沒有真的被用上
+            "profile_flags": derivation_flags,
+            "profile_applied": bool(prof.get("profile")),
+            "budget_seconds": prof.get("budget_seconds"),
+            "budget_applied": True,
+            "suggested_watchlist": watchlist,
+            "watchlist_seeded": seeded,
+            # budget_reasons / reasons 的中文在來源檔就已經是 U+FFFD，救不回來，
+            # 所以不送上網站；只送 API 證據（ASCII，沒壞）。
+            "prose_lost_to_encoding": True,
+        },
+        "delta": {
+            "deepest_control": ctl_deep,
+            "deepest_treated": trt_deep,
+            "distinct_control": ctl_dist,
+            "distinct_treated": trt_dist,
+            "verdict_control": (control.get("outcome") or {}).get("verdict"),
+            "reason_control": (control.get("outcome") or {}).get("reason"),
+            "verdict_treated": (treated.get("outcome") or {}).get("verdict"),
+            "reason_treated": (treated.get("outcome") or {}).get("reason"),
+            "iters_control": len(control.get("rounds") or []),
+            "iters_treated": len(treated.get("rounds") or []),
+            "classification": classify_handoff(ctl_deep, trt_deep,
+                                               ctl_dist, trt_dist),
+            "identical_rounds": [r["n_apis"] for r in control.get("rounds") or []]
+                                == [r["n_apis"] for r in treated.get("rounds") or []],
+        },
+        "notes": {
+            "pairing":
+                "這兩欄是同一天、同一批、其他參數固定的配對執行：左邊空 profile "
+                "＋ budget 60 秒，右邊用靜態報告派生的 profile ＋ budget。"
+                "能互相比較的是這兩欄，不是拿右邊去比上面第二組 —— 那是不同批次、"
+                "參數也不一樣。",
+            "watchlist":
+                "靜態端每一支都產出了建議 watchlist，但這一批的執行條件是"
+                "「不預先種 optional watchlist」，所以那份清單沒有被套用。"
+                "換句話說，靜態端三項輸出（profile／budget／watchlist）裡"
+                "只有前兩項被測到。",
+            "verdict":
+                "判定字串不是分數。同一支樣本從 inconclusive 變成 "
+                "unresolved/no_progress，指的是「停下來的理由不同」，"
+                "不代表行為覆蓋變差 —— 要看呼叫數與相異 API 數。",
+        },
+    }
+
+
+# --------------------------------------------------------------------------
 # 轉換：靜態分析
 # --------------------------------------------------------------------------
 
@@ -1040,11 +1273,12 @@ def build_static(intel):
 # 組裝
 # --------------------------------------------------------------------------
 
-def build_sample(sha8, speak_pair, intel, mirage_runs):
+def build_sample(sha8, speak_pair, intel, mirage_runs, last=None):
     official = speak_pair["official"]
     speak = build_speakeasy(official, speak_pair["variant"])
     static = build_static(intel) if intel else {"available": False}
     dynamic = build_mirage(mirage_runs or [], speak["apis_total"])
+    handoff = build_handoff(sha8, last, speak["apis_total"])
 
     meta = (intel or {}).get("meta") or {}
     target = meta.get("target") or ""
@@ -1060,6 +1294,7 @@ def build_sample(sha8, speak_pair, intel, mirage_runs):
         "speakeasy": speak,
         "static": static,
         "dynamic": dynamic,
+        "handoff": handoff,
         "baseline_segments": build_baseline_segments(speak),
     }
 
@@ -1105,6 +1340,29 @@ def build_sample(sha8, speak_pair, intel, mirage_runs):
         "mirage_scale": dyn.get("scale"),
         "mirage_warned": any(w["kind"] == "bad" for r in rounds for w in r["warnings"]),
     })
+
+    # 第三組攤平到總覽。available=False 時全部留 None —— 總覽表要顯示「—」，
+    # 不是 0（0 會被讀成「量到了，結果是零」）。
+    hd = handoff if handoff.get("available") else {}
+    hdd = hd.get("delta") or {}
+    hdv = hd.get("derivation") or {}
+    sample["summary"].update({
+        "handoff": bool(hd),
+        "handoff_class": hdd.get("classification"),
+        "handoff_deep_control": hdd.get("deepest_control"),
+        "handoff_deep_treated": hdd.get("deepest_treated"),
+        "handoff_distinct_control": hdd.get("distinct_control"),
+        "handoff_distinct_treated": hdd.get("distinct_treated"),
+        "handoff_reason_control": hdd.get("reason_control"),
+        "handoff_reason_treated": hdd.get("reason_treated"),
+        "handoff_profile_applied": hdv.get("profile_applied") if hd else None,
+        "handoff_watchlist_seeded": hdv.get("watchlist_seeded") if hd else None,
+        "handoff_n_watchlist": len(hdv.get("suggested_watchlist") or []) if hd else None,
+        "handoff_budget_control": ((hd.get("conditions") or {})
+                                   .get("control") or {}).get("budget_seconds"),
+        "handoff_budget_treated": ((hd.get("conditions") or {})
+                                   .get("treated") or {}).get("budget_seconds"),
+    })
     return sample
 
 
@@ -1132,14 +1390,84 @@ TRACKS = [
         "id": "static_first",
         "label": "＋動態＋靜態（靜態報告餵給動態端）",
         "accent": "static",
-        "status": "pending",
-        "blurb": "把靜態流水線產出的檢測點清單與模擬預算餵給動態端當起始條件，"
-                 "看能不能少走幾輪冤枉路。",
-        "detail": "尚未取得 —— 這一組還沒跑過，網站上不會有它的數字。"
-                  "靜態分析報告本身已經有了（在每支樣本的詳情頁），"
-                  "但「靜態情報實際改善了動態結果多少」沒有資料，不編。",
+        "status": "available",
+        "blurb": "把靜態流水線派生的環境剖繪與模擬預算餵給動態端當起始條件。"
+                 "這一組是配對實驗：同六支樣本、同一天、其他參數固定，"
+                 "各跑一次「空 profile ＋ budget 60」與一次「靜態派生的 "
+                 "profile ＋ budget」。",
+        "detail": "6 支 × 2 種模式共 12 份 run。⚠️ 只有 profile 與 budget 被套用；"
+                  "靜態端同時產出的建議 watchlist 因為執行條件是"
+                  "「不預先種 optional watchlist」而沒有進場 —— "
+                  "所以這是對交接機制的**部分**驗證，不是完整驗證。",
     },
 ]
+
+
+# 第三組的分級標籤，前端與 method 頁共用同一份文字。
+HANDOFF_CLASSES = {
+    "decisive": {
+        "label": "決定性改善",
+        "blurb": "呼叫數變化 5 倍以上，或末輪相異 API 多 5 支以上。",
+    },
+    "minor": {
+        "label": "小幅改善",
+        "blurb": "呼叫數變化 1.5 倍以上，或末輪相異 API 多 2 支以上。",
+    },
+    "none": {
+        "label": "無明顯變化",
+        "blurb": "兩者差距在上述門檻以下，含逐筆完全相同。",
+    },
+}
+
+
+def build_handoff_meta(samples, last):
+    """第三組的整批摘要。沒有資料時明確標 available=False，不填零。"""
+    hs = [s["handoff"] for s in samples if s["handoff"].get("available")]
+    if not hs:
+        return {"available": False,
+                "why": "沒有第三組的配對資料" if not last else
+                       "有資料來源但沒有任何一支湊成配對"}
+
+    def count(cls):
+        return sum(1 for h in hs if h["delta"]["classification"] == cls)
+
+    n_seeded = sum(1 for h in hs if h["derivation"]["watchlist_seeded"])
+    n_profile = sum(1 for h in hs if h["derivation"]["profile_applied"])
+    n_designed = sum(1 for h in hs
+                     if h["conditions"]["treated"]["profile_as_designed"]
+                     and h["conditions"]["control"]["profile_as_designed"])
+    n_identical = sum(1 for h in hs if h["delta"]["identical_rounds"])
+
+    return {
+        "available": True,
+        "n_pairs": len(hs),
+        "commit": hs[0].get("commit"),
+        "batch_generated_at": hs[0].get("batch_generated_at"),
+        "classes": HANDOFF_CLASSES,
+        "n_decisive": count("decisive"),
+        "n_minor": count("minor"),
+        "n_none": count("none"),
+        "n_profile_applied": n_profile,
+        "n_watchlist_seeded": n_seeded,
+        "n_profile_as_designed": n_designed,
+        "n_identical_rounds": n_identical,
+        # 兩組都是 success=false，這件事不能被「有改善」蓋掉
+        "n_success_control": sum(
+            1 for h in hs if (h["control"].get("outcome") or {}).get("success")),
+        "n_success_treated": sum(
+            1 for h in hs if (h["treated"].get("outcome") or {}).get("success")),
+        "headline":
+            "同一批、其他參數固定的配對實驗：%d 支裡 %d 支決定性改善、"
+            "%d 支小幅改善、%d 支沒有變化。兩組的 success 都是 0/%d —— "
+            "靜態情報改變的是「跑到哪」，不是「分析成功」。"
+            % (len(hs), count("decisive"), count("minor"), count("none"),
+               len(hs)),
+        "caveat":
+            "靜態端派生的三樣東西裡，profile 只有 %d 支拿到非空值、budget 全部套用、"
+            "建議 watchlist %d 支被套用。所以沒有變化的那幾支不能推論成"
+            "「靜態情報沒用」—— 最可能起作用的那一項根本沒進場。"
+            % (n_profile, n_seeded),
+    }
 
 
 def main():
@@ -1147,17 +1475,24 @@ def main():
     ap.add_argument("--speakeasy", default=DEFAULT_SPEAKEASY)
     ap.add_argument("--intel", default=DEFAULT_INTEL)
     ap.add_argument("--mirage", default=DEFAULT_MIRAGE)
+    ap.add_argument("--last", default=DEFAULT_LAST)
     ap.add_argument("--out", default=DEFAULT_OUT)
     args = ap.parse_args()
 
     speak = load_speakeasy(args.speakeasy)
     intel = load_intel(args.intel)
     mirage = load_mirage(args.mirage)
+    last = load_last(args.last)
 
     print("[*] Speakeasy 基線：%d 支" % len(speak))
     print("[*] 靜態報告：%d 支" % len(intel))
     print("[*] mirage 執行紀錄：%d 支 / 共 %d 份 run"
           % (len(mirage), sum(len(v) for v in mirage.values())))
+    if last:
+        print("[*] 第三組 A/B 對照：%d 支 / commit %s"
+              % (len(last["runs"]), (last.get("commit") or "?")[:12]))
+    else:
+        print("[*] 第三組 A/B 對照：沒有資料（%s）" % args.last)
 
     samples = []
     for sha8 in sorted(speak):
@@ -1166,7 +1501,8 @@ def main():
             print("[!] %s 沒有對應的靜態報告" % sha8, file=sys.stderr)
         if sha8 not in mirage:
             print("[!] %s 沒有對應的 mirage 執行紀錄" % sha8, file=sys.stderr)
-        samples.append(build_sample(sha8, speak[sha8], it, mirage.get(sha8)))
+        samples.append(build_sample(sha8, speak[sha8], it, mirage.get(sha8),
+                                    last))
 
     for sha8 in sorted(intel):
         if sha8 not in speak:
@@ -1187,6 +1523,22 @@ def main():
                  " → ".join("{:,}".format(r["n_apis"]) for r in dyn["rounds"]),
                  dyn["scale"], oc["success"], oc["assisted"],
                  oc["verdict"], oc["reason"]))
+
+    # 第三組也逐支印，理由同上
+    if last:
+        print("[*] 第三組 normal vs static-profile：")
+        for s in samples:
+            h = s["handoff"]
+            if not h.get("available"):
+                print("    %s  %s" % (s["id"], h.get("why")))
+                continue
+            d = h["delta"]
+            print("    %s  %-9s  最深 %s → %s   相異 %s → %s   %s → %s"
+                  % (s["id"], HANDOFF_CLASSES[d["classification"]]["label"],
+                     "{:,}".format(d["deepest_control"]),
+                     "{:,}".format(d["deepest_treated"]),
+                     d["distinct_control"], d["distinct_treated"],
+                     d["reason_control"], d["reason_treated"]))
 
     n_guard = sum(1 for s in samples
                   if (s["dynamic"].get("outcome") or {}).get("reason")
@@ -1216,6 +1568,7 @@ def main():
                 "六支樣本的 mirage 結果，success 全部是 false、assisted 全部是 true。"
                 "「跑得比較深」不是「分析成功」—— 每一支都至少有一個值是我們補的或編的。",
         },
+        "handoff_meta": build_handoff_meta(samples, last),
         # 這裡刻意不列出被排除的欄位名稱 —— 那些名稱本身就是 audit() 的黑名單，
         # 寫進來會讓「grep data/ 應該一無所獲」這個驗證失去意義。
         # 完整的排除清單寫在 method.html 與這支腳本開頭的 docstring。

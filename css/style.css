@@ -542,6 +542,56 @@ table.data td.wrap-any { word-break: break-all; }
   border: 1.2px dashed var(--pending);
 }
 
+/* ------------------------------------------- 第三組：同批 A/B 對照 */
+
+/* 那一欄沒有這一輪時畫的空框。留白會被讀成「0 次呼叫」，虛線才看得出
+   是「這一欄只跑了比較少輪」。 */
+.chart-svg .seg-empty {
+  fill: transparent;
+  stroke: var(--pending);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+}
+
+.hf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+  margin: 16px 0 20px;
+}
+.hf-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px 16px;
+  background: var(--bg-soft);
+}
+.hf-card > h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  letter-spacing: .01em;
+}
+.hf-card .kv { margin-top: 12px; }
+.hf-card details { margin-top: 10px; }
+
+.hf-flag {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hf-flag:last-of-type { border-bottom: 0; }
+.hf-flag > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.hf-flag code {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--sta);
+  font-weight: 700;
+}
+.hf-flag p { margin: 4px 0 0; }
+
 /* --------------------------------------------- 展開面板裡的逐輪 API 差異 */
 
 .detail-panel h4 {
