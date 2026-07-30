@@ -864,7 +864,7 @@
 
   // ------------------------------------------------- 第三組：同批 A/B 對照
 
-  var HF_KIND = { decisive: 'ok', minor: 'warn', none: 'muted' };
+  var HF_KIND = { decisive: 'ok', minor: 'warn', none: 'muted', regress: 'bad' };
 
   /* 這一段的設計原則：
    *   1. 兩欄一定並排。只放 static-profile 的數字就是在誘導誤讀。
@@ -974,12 +974,17 @@
     var lg = el('div', 'chart-legend');
     var a1 = el('span'); var ia = el('i');
     ia.style.background = 'var(--dyn)';
+    // 對照組可能來自上面那張圖（那份 run 的報告沒有帶預算欄位），
+    // 也可能來自第三組批次的 normal。圖例要講對是哪一種。
     append(a1, ia, el('span', null,
-      'normal：空 profile ＋ budget ' + A.num(cond.control.budget_seconds) + 's'));
+      cond.control.from_chart_above
+        ? '沒有靜態情報（就是上面那張圖的同一份 run：' + cond.control.run + '）'
+        : 'normal：空 profile ＋ budget ' +
+          A.num(cond.control.budget_seconds) + 's'));
     var a2 = el('span'); var ib = el('i');
     ib.style.background = 'var(--sta)';
     append(a2, ib, el('span', null,
-      'static-profile：靜態派生的 profile ＋ budget ' +
+      '有靜態情報：靜態派生的 profile ＋ budget ' +
       A.num(cond.treated.budget_seconds) + 's'));
     append(lg, a1, a2);
     box.appendChild(lg);
@@ -989,14 +994,27 @@
     sec.appendChild(panel);
 
     var foot = el('p', 'small faint');
-    foot.textContent = 'run ' + cond.control.run + '（normal）／' +
-      cond.treated.run + '（static-profile）　批次 ' +
+    foot.textContent = 'run ' + cond.control.run + '（沒有靜態情報）／' +
+      cond.treated.run + '（有靜態情報）　static-profile 批次 ' +
       (hf.batch_generated_at || '?') +
       '　commit ' + String(hf.commit || '?').slice(0, 12) +
-      (cond.control.profile_as_designed && cond.treated.profile_as_designed
+      (cond.treated.profile_as_designed
         ? '　初始 profile 與設計一致（已核對）'
         : '　⚠ 初始 profile 與設計不符');
     sec.appendChild(foot);
+
+    // 同批次的對照組：即使沒被畫進圖裡也要看得到，否則「不能全歸給靜態情報」
+    // 這句話就沒有東西可以佐證。
+    var sb = hf.same_batch_control;
+    if (sb && cond.control.from_chart_above) {
+      var sbp = el('p', 'small faint');
+      sbp.textContent = '同批次的對照組（沒有畫進上圖）：' + sb.run +
+        '，逐輪 API ' +
+        (sb.apis || []).map(function (n) { return A.num(n); }).join(' → ') +
+        '，' + sb.verdict + ' / ' + sb.reason +
+        '　—— 要做嚴謹的同批比較請用這一組。';
+      sec.appendChild(sbp);
+    }
     return sec;
   }
 
@@ -1078,8 +1096,8 @@
       svg.appendChild(xl);
 
       var pairs = [
-        [cr[gi], 'ctl', 'var(--dyn)', 'normal', ctl, -1],
-        [tr[gi], 'trt', 'var(--sta)', 'static-profile', trt, 1]
+        [cr[gi], 'ctl', 'var(--dyn)', '沒有靜態情報', ctl, -1],
+        [tr[gi], 'trt', 'var(--sta)', '有靜態情報', trt, 1]
       ];
       pairs.forEach(function (p) {
         var rd = p[0];

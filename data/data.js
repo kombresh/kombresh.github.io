@@ -1,12 +1,12 @@
 /* 由 tools/build-data.py 產生，內容與 bundle.json 相同。
    用途：以 file:// 直接開啟時 fetch() 會被 CORS 擋掉，改用這一份。 */
 window.DATA = {
- "generated_at": "2026-07-30T04:25:26Z",
+ "generated_at": "2026-07-30T10:43:03Z",
  "generator": "tools/build-data.py",
  "handoff_meta": {
   "available": true,
   "batch_generated_at": "2026-07-30T06:35:09.3024639+08:00",
-  "caveat": "靜態端派生的三樣東西裡，profile 只有 1 支拿到非空值、budget 全部套用、建議 watchlist 0 支被套用。所以沒有變化的那幾支不能推論成「靜態情報沒用」—— 最可能起作用的那一項根本沒進場。",
+  "caveat": "⚠️ 對照組用的是每支樣本上面那張圖的同一份 run（6 / 6 支），為的是讓同一頁不會出現兩個不同的「沒有靜態情報」數字。代價是兩欄**不是同一批次**，上限與預算設定也不同，差異裡含有批次的成分，不能全部歸給靜態情報 —— 同批次的對照組數字保留在每一支的頁腳。\n另外，靜態端派生的三樣東西裡，profile 只有 1 支拿到非空值、budget 全部套用、建議 watchlist 0 支被套用。所以沒有變化的那幾支不能推論成「靜態情報沒用」—— 最可能起作用的那一項根本沒進場。",
   "classes": {
    "decisive": {
     "blurb": "呼叫數變化 5 倍以上，或末輪相異 API 多 5 支以上。",
@@ -19,17 +19,23 @@ window.DATA = {
    "none": {
     "blurb": "兩者差距在上述門檻以下，含逐筆完全相同。",
     "label": "無明顯變化"
+   },
+   "regress": {
+    "blurb": "末輪相異 API 比對照組少 —— 不論呼叫數差幾倍，都不算改善。",
+    "label": "覆蓋變少"
    }
   },
   "commit": "263283d95df38caf8bf991625a8bd990ac241d8e",
-  "headline": "同一批、其他參數固定的配對實驗：6 支裡 2 支決定性改善、0 支小幅改善、4 支沒有變化。兩組的 success 都是 0/6 —— 靜態情報改變的是「跑到哪」，不是「分析成功」。",
+  "headline": "沒有靜態情報 vs 有靜態情報：6 支裡 2 支決定性改善、0 支小幅改善、2 支沒有變化、2 支覆蓋變少。兩組的 success 都是 0/6 —— 靜態情報改變的是「跑到哪」，不是「分析成功」。",
+  "n_control_from_chart_above": 6,
   "n_decisive": 2,
-  "n_identical_rounds": 2,
+  "n_identical_rounds": 0,
   "n_minor": 0,
-  "n_none": 4,
+  "n_none": 2,
   "n_pairs": 6,
   "n_profile_applied": 1,
   "n_profile_as_designed": 6,
+  "n_regress": 2,
   "n_success_control": 0,
   "n_success_treated": 0,
   "n_watchlist_seeded": 0
@@ -1061,13 +1067,14 @@ window.DATA = {
     "commit": "263283d95df38caf8bf991625a8bd990ac241d8e",
     "conditions": {
      "control": {
-      "budget_seconds": 60,
-      "deadline_seconds": 900,
-      "max_iters": 5,
+      "budget_seconds": null,
+      "deadline_seconds": null,
+      "from_chart_above": true,
+      "max_iters": null,
       "profile_as_designed": true,
       "profile_empty": true,
       "profile_keys": [],
-      "run": "run_20260730-055742",
+      "run": "run_20260728-000700",
       "watchlist_seeded": false
      },
      "treated": {
@@ -1090,11 +1097,11 @@ window.DATA = {
      "final_profile": [
       {
        "key": "hostname",
-       "value": "DESKTOP-39C7A760F5302D"
+       "value": "DESKTOP-7F3K9A2"
       },
       {
        "key": "user_name",
-       "value": "User"
+       "value": "jdoe"
       },
       {
        "key": "os_ver",
@@ -1148,7 +1155,7 @@ window.DATA = {
        "kernel32.HeapAlloc"
       ],
       "recorded": 20000,
-      "round_n_apis": 88254,
+      "round_n_apis": 199941,
       "top": [
        {
         "api": "kernel32.CloseHandle",
@@ -1368,10 +1375,8 @@ window.DATA = {
        }
       ]
      },
-     "final_watchlist": [
-      "bcryptprimitives.processprng"
-     ],
-     "generated": "2026-07-30 06:21:13",
+     "final_watchlist": [],
+     "generated": "2026-07-28 01:18:36",
      "harness": {
       "answered_by_emulator": [
        "flsgetvalue2 -> kernel32.FlsGetValue"
@@ -1381,7 +1386,7 @@ window.DATA = {
       "refused_to_llm": []
      },
      "injections": [],
-     "max_apis": 88254,
+     "max_apis": 199941,
      "min_apis": 36,
      "n_damaged": 0,
      "n_emulator_errors": 0,
@@ -1396,11 +1401,10 @@ window.DATA = {
       "exit_meaning": "3 —— 跑到了但有不可驗證的成分(或 1,若 LLM 失效)",
       "inconclusive": true,
       "iterations": 2,
-      "n_llm_failures": 2,
+      "n_llm_failures": 1,
       "n_plan_errors": 0,
-      "reason": "synthesised_data_import",
+      "reason": "llm_call_failed",
       "reasons": [
-       "synthesised_data_import",
        "llm_call_failed",
        "synthesized_unimplemented_api"
       ],
@@ -1417,22 +1421,20 @@ window.DATA = {
      "partial": false,
      "reason_info": {
       "kind": "bad",
-      "label": "依賴了合成的資料匯入值",
-      "why": "被匯入的其實是變數而不是函式，我們給了一個值。那個值是編的，所以這一輪標成 inconclusive。"
+      "label": "LLM 端點失敗",
+      "why": "這一輪要問模型的問題沒有拿到答案（逾時或回了不能用的內容）。這一輪的數字是端點故障下的產物，不是分析成果。"
      },
      "report_version": 1,
      "rounds": [
       {
-       "add_watchlist": [
-        "bcryptprimitives.processprng"
-       ],
+       "add_watchlist": [],
        "api_added": [],
        "api_removed": [],
        "api_scope": [
         {
          "api": "bcryptprimitives.processprng",
          "sources": [
-          "watch",
+          "synth",
           "args"
          ]
         },
@@ -1601,42 +1603,15 @@ window.DATA = {
          "sources": [
           "args"
          ]
-        },
-        {
-         "api": "msvcrt.__getmainargs",
-         "sources": [
-          "conv"
-         ]
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "sources": [
-          "conv"
-         ]
         }
        ],
        "api_signatures": [],
-       "callconv_fixes": [
-        {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
-        }
-       ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
+       "callconv_fixes": [],
+       "data_imports": [],
        "delta": null,
        "dispatch_raises": [],
        "dynamic_code": [],
-       "emu_seconds": 0.33,
+       "emu_seconds": 0.23,
        "entry_points": [
         {
          "ep_type": "tls_callback_0",
@@ -1652,8 +1627,8 @@ window.DATA = {
         }
        ],
        "llm_calls": 6,
-       "llm_diagnosis": "The sample called bcryptprimitives.ProcessPrng (an unimplemented API) and the LLM handler timed out, so the emulator synthesised a return value. Because the return was synthesised the run is marked inconclusive regardless of any profile changes. The sample also called SetThreadDescription, CreateWaitableTimerExW and SetWaitableTimer which are unimplemented; those are already answered by the LLM and cannot be moved to the watchlist. No evidence of anti-analysis checks, mouse/idle waits, or an empty process list was seen.",
-       "llm_seconds": 364.69,
+       "llm_diagnosis": "The sample called five APIs that the emulator does not implement at all (bcryptprimitives.ProcessPrng, kernel32.CreateWaitableTimerExW, kernel32.SetThreadDescription, kernel32.SetThreadStackGuarantee, kernel32.SetWaitableTimer). Because the emulator synthesised return values for these calls, the run was marked inconclusive. The trace shows no evidence of anti-analysis checks, crashes, or environment detection; the program simply uses modern threading and cryptography APIs that are missing from the emulator.",
+       "llm_seconds": 192.62,
        "n_apis": 229,
        "n_arity_fallbacks": 0,
        "n_faults": 32,
@@ -1665,18 +1640,18 @@ window.DATA = {
        "profile_changed": [
         {
          "key": "hostname",
-         "value": "DESKTOP-39C7A760F5302D"
+         "value": "DESKTOP-7F3K9A2"
         },
         {
          "key": "user_name",
-         "value": "User"
+         "value": "jdoe"
         },
         {
          "key": "os_ver",
          "value": "name=windows、major=10、minor=0、build=19045"
         }
        ],
-       "reason": "synthesised_data_import",
+       "reason": "synthesized_unimplemented_api",
        "round": 1,
        "seeded_watchlist": [],
        "self_abort": false,
@@ -1684,6 +1659,13 @@ window.DATA = {
        "stack_unknown": 0,
        "stop": null,
        "synth_fills": [
+        {
+         "api": "bcryptprimitives.processprng",
+         "applied": 1,
+         "calls": 1,
+         "calls_with_writes": 1,
+         "proposed": 1
+        },
         {
          "api": "kernel32.createwaitabletimerexw",
          "applied": 1,
@@ -1730,7 +1712,7 @@ window.DATA = {
         {
          "api": "bcryptprimitives.processprng",
          "sources": [
-          "watch",
+          "synth",
           "args"
          ]
         },
@@ -1893,42 +1875,15 @@ window.DATA = {
          "sources": [
           "args"
          ]
-        },
-        {
-         "api": "msvcrt.__getmainargs",
-         "sources": [
-          "conv"
-         ]
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "sources": [
-          "conv"
-         ]
         }
        ],
        "api_signatures": [],
-       "callconv_fixes": [
-        {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
-        }
-       ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
-       "delta": 88025,
+       "callconv_fixes": [],
+       "data_imports": [],
+       "delta": 199712,
        "dispatch_raises": [],
        "dynamic_code": [],
-       "emu_seconds": 60.02,
+       "emu_seconds": 85.28,
        "entry_points": [
         {
          "ep_type": "tls_callback_0",
@@ -1938,15 +1893,15 @@ window.DATA = {
         },
         {
          "ep_type": "module_entry",
-         "error": "",
-         "n_apis": 88254,
+         "error": "max_api_count",
+         "n_apis": 199941,
          "start_addr": "0x14002682c"
         }
        ],
        "llm_calls": 11,
        "llm_diagnosis": "",
-       "llm_seconds": 373.62,
-       "n_apis": 88254,
+       "llm_seconds": 389.18,
+       "n_apis": 199941,
        "n_arity_fallbacks": 0,
        "n_faults": 32,
        "n_stack_mismatch": 0,
@@ -1956,11 +1911,11 @@ window.DATA = {
        "profile": [
         {
          "key": "hostname",
-         "value": "DESKTOP-39C7A760F5302D"
+         "value": "DESKTOP-7F3K9A2"
         },
         {
          "key": "user_name",
-         "value": "User"
+         "value": "jdoe"
         },
         {
          "key": "os_ver",
@@ -1968,14 +1923,27 @@ window.DATA = {
         }
        ],
        "profile_changed": [],
-       "reason": "synthesised_data_import",
+       "reason": "llm_call_failed",
        "round": 2,
        "seeded_watchlist": [],
        "self_abort": false,
        "stack_checked": 54,
        "stack_unknown": 0,
-       "stop": null,
+       "stop": {
+        "address": "",
+        "instr": "",
+        "pc": "0x14001f114",
+        "sp": null,
+        "type": "max_api_count"
+       },
        "synth_fills": [
+        {
+         "api": "bcryptprimitives.processprng",
+         "applied": 1,
+         "calls": 1,
+         "calls_with_writes": 1,
+         "proposed": 1
+        },
         {
          "api": "kernel32.createwaitabletimerexw",
          "applied": 1,
@@ -2006,25 +1974,33 @@ window.DATA = {
         }
        ],
        "verdict": "inconclusive",
-       "warnings": [],
-       "watchlist_in": [
-        "bcryptprimitives.processprng"
-       ]
+       "warnings": [
+        {
+         "kind": "bad",
+         "text": "這一輪的 LLM 呼叫失敗。外圈要問的問題沒有拿到答案，接下來發生的事是端點故障下的產物，不是分析成果。"
+        },
+        {
+         "kind": "bad",
+         "text": "這一輪是撞到模擬器的 API 呼叫上限才停的 —— 樣本當時還在跑。199,941 這個數字反映的是「上限在哪」，不是「行為有多深」；呼叫大多集中在同一個輪詢迴圈裡。"
+        }
+       ],
+       "watchlist_in": []
       }
      ],
-     "run": "run_20260730-055742",
+     "run": "run_20260728-000700",
      "scale": "log"
     },
+    "control_source": "chart_above",
     "delta": {
      "classification": "decisive",
-     "deepest_control": 88254,
+     "deepest_control": 199941,
      "deepest_treated": 1182,
      "distinct_control": 54,
      "distinct_treated": 63,
      "identical_rounds": false,
      "iters_control": 2,
      "iters_treated": 2,
-     "reason_control": "synthesised_data_import",
+     "reason_control": "llm_call_failed",
      "reason_treated": "no_progress",
      "verdict_control": "inconclusive",
      "verdict_treated": "unresolved"
@@ -2066,9 +2042,28 @@ window.DATA = {
      "watchlist_seeded": false
     },
     "notes": {
-     "pairing": "這兩欄是同一天、同一批、其他參數固定的配對執行：左邊空 profile ＋ budget 60 秒，右邊用靜態報告派生的 profile ＋ budget。能互相比較的是這兩欄，不是拿右邊去比上面第二組 —— 那是不同批次、參數也不一樣。",
+     "pairing": "左邊是上面那張圖的同一份執行（沒有給任何靜態情報），右邊是用靜態報告派生的 profile ＋ budget 跑的。兩張圖的藍色欄是同一份 run，所以數字一定一致。\n⚠️ 但這兩欄**不是同一個批次**，上限與預算設定也不同，所以差異裡含有批次的成分，不能全部歸給靜態情報。同批次的對照組數字列在下面的頁腳，要做嚴謹比較請用那一組。",
      "verdict": "判定字串不是分數。同一支樣本從 inconclusive 變成 unresolved/no_progress，指的是「停下來的理由不同」，不代表行為覆蓋變差 —— 要看呼叫數與相異 API 數。",
      "watchlist": "靜態端每一支都產出了建議 watchlist，但這一批的執行條件是「不預先種 optional watchlist」，所以那份清單沒有被套用。換句話說，靜態端三項輸出（profile／budget／watchlist）裡只有前兩項被測到。"
+    },
+    "same_batch_control": {
+     "apis": [
+      229,
+      88254
+     ],
+     "conditions": {
+      "budget_seconds": 60,
+      "deadline_seconds": 900,
+      "max_iters": 5,
+      "profile_as_designed": true,
+      "profile_empty": true,
+      "profile_keys": [],
+      "run": "run_20260730-055742",
+      "watchlist_seeded": false
+     },
+     "reason": "synthesised_data_import",
+     "run": "run_20260730-055742",
+     "verdict": "inconclusive"
     },
     "treated": {
      "available": true,
@@ -3907,16 +3902,16 @@ window.DATA = {
     "degraded": false,
     "emulation_seconds": 0.265,
     "handoff": true,
-    "handoff_budget_control": 60,
+    "handoff_budget_control": null,
     "handoff_budget_treated": 300,
     "handoff_class": "decisive",
-    "handoff_deep_control": 88254,
+    "handoff_deep_control": 199941,
     "handoff_deep_treated": 1182,
     "handoff_distinct_control": 54,
     "handoff_distinct_treated": 63,
     "handoff_n_watchlist": 9,
     "handoff_profile_applied": true,
-    "handoff_reason_control": "synthesised_data_import",
+    "handoff_reason_control": "llm_call_failed",
     "handoff_reason_treated": "no_progress",
     "handoff_watchlist_seeded": false,
     "id": "21080a1c",
@@ -4779,13 +4774,14 @@ window.DATA = {
     "commit": "263283d95df38caf8bf991625a8bd990ac241d8e",
     "conditions": {
      "control": {
-      "budget_seconds": 60,
-      "deadline_seconds": 900,
-      "max_iters": 5,
+      "budget_seconds": null,
+      "deadline_seconds": null,
+      "from_chart_above": true,
+      "max_iters": null,
       "profile_as_designed": true,
       "profile_empty": true,
       "profile_keys": [],
-      "run": "run_20260730-061126",
+      "run": "run_20260728-043635",
       "watchlist_seeded": false
      },
      "treated": {
@@ -4809,7 +4805,7 @@ window.DATA = {
       },
       {
        "key": "user_name",
-       "value": "user"
+       "value": "User"
       },
       {
        "key": "os_ver",
@@ -5092,15 +5088,12 @@ window.DATA = {
       ]
      },
      "final_watchlist": [],
-     "generated": "2026-07-30 06:21:21",
+     "generated": "2026-07-28 04:38:42",
      "harness": {
       "answered_by_emulator": [],
       "blind_spots": [],
       "filled": [],
-      "refused_to_llm": [
-       "kernel32.getmodulehandlew",
-       "kernel32.getprocaddress"
-      ]
+      "refused_to_llm": []
      },
      "injections": [],
      "max_apis": 17094,
@@ -5116,7 +5109,7 @@ window.DATA = {
      "outcome": {
       "assisted": true,
       "exit_meaning": "1 —— 外圈用盡機會仍沒能讓樣本跑起來",
-      "inconclusive": true,
+      "inconclusive": false,
       "iterations": 2,
       "n_llm_failures": 0,
       "n_plan_errors": 0,
@@ -5314,42 +5307,15 @@ window.DATA = {
          "sources": [
           "args"
          ]
-        },
-        {
-         "api": "msvcrt.__getmainargs",
-         "sources": [
-          "conv"
-         ]
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "sources": [
-          "conv"
-         ]
         }
        ],
        "api_signatures": [],
-       "callconv_fixes": [
-        {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
-        }
-       ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
+       "callconv_fixes": [],
+       "data_imports": [],
        "delta": null,
        "dispatch_raises": [],
        "dynamic_code": [],
-       "emu_seconds": 9.83,
+       "emu_seconds": 5.98,
        "entry_points": [
         {
          "ep_type": "module_entry",
@@ -5359,7 +5325,7 @@ window.DATA = {
         }
        ],
        "llm_calls": 0,
-       "llm_diagnosis": "The sample is a .NET application that initializes the CLR via 〔檔名已移除〕, then calls CorExitProcess to terminate the managed runtime before calling ExitProcess. The emulator returned a synthesised handle for GetModuleHandleW(〔引文已移除〕) and a synthesised function pointer for GetProcAddress(〔引文已移除〕), causing the run to be marked inconclusive due to synthesised_data_import. The sample did not perform anti-analysis checks; it simply followed the normal .NET shutdown sequence. To obtain a conclusive result, the emulator must load the real 〔檔名已移除〕 and resolve CorExitProcess from it, rather than synthesising return values.",
+       "llm_diagnosis": "The sample is a .NET application that performed normal CLR shutdown: it obtained 〔檔名已移除〕, resolved CorExitProcess, called it with exit code 0, then called ExitProcess(0). The emulator returned success for every API and the process terminated cleanly with exit code 0. No anti-analysis checks, crashes, or environmental checks were observed in the trace.",
        "llm_seconds": 0.0,
        "n_apis": 17094,
        "n_arity_fallbacks": 0,
@@ -5376,14 +5342,14 @@ window.DATA = {
         },
         {
          "key": "user_name",
-         "value": "user"
+         "value": "User"
         },
         {
          "key": "os_ver",
          "value": "name=windows、major=10、minor=0、build=19045"
         }
        ],
-       "reason": "synthesised_data_import",
+       "reason": "clean",
        "round": 1,
        "seeded_watchlist": [],
        "self_abort": false,
@@ -5391,7 +5357,7 @@ window.DATA = {
        "stack_unknown": 1,
        "stop": null,
        "synth_fills": [],
-       "verdict": "inconclusive",
+       "verdict": "bailed",
        "warnings": [],
        "watchlist_in": []
       },
@@ -5573,42 +5539,15 @@ window.DATA = {
          "sources": [
           "args"
          ]
-        },
-        {
-         "api": "msvcrt.__getmainargs",
-         "sources": [
-          "conv"
-         ]
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "sources": [
-          "conv"
-         ]
         }
        ],
        "api_signatures": [],
-       "callconv_fixes": [
-        {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
-        }
-       ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
+       "callconv_fixes": [],
+       "data_imports": [],
        "delta": 0,
        "dispatch_raises": [],
        "dynamic_code": [],
-       "emu_seconds": 8.1,
+       "emu_seconds": 6.02,
        "entry_points": [
         {
          "ep_type": "module_entry",
@@ -5618,13 +5557,13 @@ window.DATA = {
         }
        ],
        "llm_calls": 0,
-       "llm_diagnosis": "The sample is a .NET application that performs standard runtime initialization (TLS/FLS operations, critical section management, heap operations) and then cleanly shuts down by calling CorExitProcess followed by ExitProcess. The 〔引文已移除〕 result with 〔引文已移除〕 indicates the emulator synthesized the return value for GetProcAddress when resolving 〔引文已移除〕 from 〔檔名已移除〕. Since 〔檔名已移除〕 is a core .NET runtime component that should exist on any Windows 10 system with .NET Framework installed, the emulator should have this module available rather than synthesizing the API resolution. The clean exit (exit_code 0) after CorExitProcess confirms this is normal .NET shutdown behavior, not anti-analysis.",
+       "llm_diagnosis": "",
        "llm_seconds": 0.0,
        "n_apis": 17094,
        "n_arity_fallbacks": 0,
        "n_faults": 32,
        "n_stack_mismatch": 0,
-       "nudged": true,
+       "nudged": false,
        "payload_hits_discounted": 0,
        "payload_seen": false,
        "profile": [
@@ -5634,7 +5573,7 @@ window.DATA = {
         },
         {
          "key": "user_name",
-         "value": "user"
+         "value": "User"
         },
         {
          "key": "os_ver",
@@ -5642,7 +5581,7 @@ window.DATA = {
         }
        ],
        "profile_changed": [],
-       "reason": "synthesised_data_import",
+       "reason": "clean",
        "round": 2,
        "seeded_watchlist": [],
        "self_abort": false,
@@ -5650,19 +5589,15 @@ window.DATA = {
        "stack_unknown": 1,
        "stop": null,
        "synth_fills": [],
-       "verdict": "inconclusive",
-       "warnings": [
-        {
-         "kind": "warn",
-         "text": "這一輪外圈主動「推」了樣本一把（nudged）—— 有一個值是規則塞的，不是模型要的。"
-        }
-       ],
+       "verdict": "bailed",
+       "warnings": [],
        "watchlist_in": []
       }
      ],
-     "run": "run_20260730-061126",
+     "run": "run_20260728-043635",
      "scale": "linear"
     },
+    "control_source": "chart_above",
     "delta": {
      "classification": "none",
      "deepest_control": 17094,
@@ -5696,9 +5631,28 @@ window.DATA = {
      "watchlist_seeded": false
     },
     "notes": {
-     "pairing": "這兩欄是同一天、同一批、其他參數固定的配對執行：左邊空 profile ＋ budget 60 秒，右邊用靜態報告派生的 profile ＋ budget。能互相比較的是這兩欄，不是拿右邊去比上面第二組 —— 那是不同批次、參數也不一樣。",
+     "pairing": "左邊是上面那張圖的同一份執行（沒有給任何靜態情報），右邊是用靜態報告派生的 profile ＋ budget 跑的。兩張圖的藍色欄是同一份 run，所以數字一定一致。\n⚠️ 但這兩欄**不是同一個批次**，上限與預算設定也不同，所以差異裡含有批次的成分，不能全部歸給靜態情報。同批次的對照組數字列在下面的頁腳，要做嚴謹比較請用那一組。",
      "verdict": "判定字串不是分數。同一支樣本從 inconclusive 變成 unresolved/no_progress，指的是「停下來的理由不同」，不代表行為覆蓋變差 —— 要看呼叫數與相異 API 數。",
      "watchlist": "靜態端每一支都產出了建議 watchlist，但這一批的執行條件是「不預先種 optional watchlist」，所以那份清單沒有被套用。換句話說，靜態端三項輸出（profile／budget／watchlist）裡只有前兩項被測到。"
+    },
+    "same_batch_control": {
+     "apis": [
+      17094,
+      17094
+     ],
+     "conditions": {
+      "budget_seconds": 60,
+      "deadline_seconds": 900,
+      "max_iters": 5,
+      "profile_as_designed": true,
+      "profile_empty": true,
+      "profile_keys": [],
+      "run": "run_20260730-061126",
+      "watchlist_seeded": false
+     },
+     "reason": "no_behaviour_change",
+     "run": "run_20260730-061126",
+     "verdict": "unresolved"
     },
     "treated": {
      "available": true,
@@ -7620,7 +7574,7 @@ window.DATA = {
     "degraded": false,
     "emulation_seconds": 4.527,
     "handoff": true,
-    "handoff_budget_control": 60,
+    "handoff_budget_control": null,
     "handoff_budget_treated": 600,
     "handoff_class": "none",
     "handoff_deep_control": 17094,
@@ -8446,13 +8400,14 @@ window.DATA = {
     "commit": "263283d95df38caf8bf991625a8bd990ac241d8e",
     "conditions": {
      "control": {
-      "budget_seconds": 60,
-      "deadline_seconds": 900,
-      "max_iters": 5,
+      "budget_seconds": null,
+      "deadline_seconds": null,
+      "from_chart_above": true,
+      "max_iters": null,
       "profile_as_designed": true,
       "profile_empty": true,
       "profile_keys": [],
-      "run": "run_20260730-061207",
+      "run": "run_20260730-002948",
       "watchlist_seeded": false
      },
      "treated": {
@@ -8471,12 +8426,16 @@ window.DATA = {
      "baseline_apis": 13,
      "final_profile": [
       {
+       "key": "trace_tail",
+       "value": "True"
+      },
+      {
        "key": "hostname",
-       "value": "DESKTOP-7F3K9M2"
+       "value": "DESKTOP-7F3K9A2"
       },
       {
        "key": "user_name",
-       "value": "john"
+       "value": "john.doe"
       },
       {
        "key": "os_ver",
@@ -8486,7 +8445,7 @@ window.DATA = {
      "final_trace": {
       "available": true,
       "capped": false,
-      "distinct": 9,
+      "distinct": 13,
       "first": [
        "kernel32.LocalAlloc",
        "kernel32.GetModuleHandleA",
@@ -8495,30 +8454,43 @@ window.DATA = {
        "kernel32.IsDebuggerPresent",
        "kernel32.CheckRemoteDebuggerPresent",
        "ntdll.NtQueryInformationProcess",
-       "ntdll.NtSetInformationThread",
-       "ntdll.NtQuerySystemInformation",
-       "ntdll.NtQuerySystemInformation",
-       "kernel32.LocalAlloc",
-       "ntdll.NtQuerySystemInformation",
-       "kernel32.LocalFree"
+       "kernel32.GetModuleFileNameW",
+       "USER32.GetProcessWindowStation",
+       "USER32.GetUserObjectInformationW",
+       "kernel32.LoadLibraryA",
+       "user32.MessageBoxW",
+       "kernel32.FreeLibrary",
+       "kernel32.ExitProcess"
       ],
-      "recorded": 13,
-      "round_n_apis": 13,
+      "recorded": 14,
+      "round_n_apis": 14,
       "top": [
-       {
-        "api": "ntdll.NtQuerySystemInformation",
-        "count": 3
-       },
        {
         "api": "kernel32.GetModuleHandleA",
         "count": 2
        },
        {
-        "api": "kernel32.LocalAlloc",
-        "count": 2
+        "api": "USER32.GetProcessWindowStation",
+        "count": 1
+       },
+       {
+        "api": "USER32.GetUserObjectInformationW",
+        "count": 1
        },
        {
         "api": "kernel32.CheckRemoteDebuggerPresent",
+        "count": 1
+       },
+       {
+        "api": "kernel32.ExitProcess",
+        "count": 1
+       },
+       {
+        "api": "kernel32.FreeLibrary",
+        "count": 1
+       },
+       {
+        "api": "kernel32.GetModuleFileNameW",
         "count": 1
        },
        {
@@ -8530,7 +8502,11 @@ window.DATA = {
         "count": 1
        },
        {
-        "api": "kernel32.LocalFree",
+        "api": "kernel32.LoadLibraryA",
+        "count": 1
+       },
+       {
+        "api": "kernel32.LocalAlloc",
         "count": 1
        },
        {
@@ -8538,16 +8514,19 @@ window.DATA = {
         "count": 1
        },
        {
-        "api": "ntdll.NtSetInformationThread",
+        "api": "user32.MessageBoxW",
         "count": 1
        }
       ]
      },
      "final_watchlist": [
       "kernel32.checkremotedebuggerpresent",
-      "kernel32.isdebuggerpresent"
+      "kernel32.isdebuggerpresent",
+      "ntdll.ntqueryinformationprocess",
+      "ntdll.ntquerysysteminformation",
+      "ntdll.ntsetinformationthread"
      ],
-     "generated": "2026-07-30 06:21:24",
+     "generated": "2026-07-30 00:47:55",
      "harness": {
       "answered_by_emulator": [],
       "blind_spots": [],
@@ -8555,36 +8534,101 @@ window.DATA = {
       "refused_to_llm": []
      },
      "injections": [],
-     "max_apis": 13,
+     "max_apis": 28,
      "min_apis": 13,
      "n_damaged": 0,
      "n_emulator_errors": 0,
-     "n_runs": 1,
+     "n_runs": 6,
      "notes": {
       "no_cumulative": "各輪的長條是各自獨立的計數，不是累積 —— 迭代之間的 API 數不是單調遞增（本批最明顯的是 13 → 28 → 14），累積畫法在數字下降時沒有意義。",
       "scope_caveat": "逐輪的完整 API 呼叫軌跡沒有留存 —— run 報告只帶最後一輪的 api_trace_final。所以這裡每一輪的「新增／消失的 API」是就「外圈這一輪實際碰到的 API 名單」（攔截清單、合成回答、LLM 宣告參數個數、派送例外、呼叫慣例修正、帶字串引數的呼叫）算的，不是完整呼叫序列的差集。長條的高度（呼叫次數）才是完整計數。"
      },
-     "other_runs": [],
+     "other_runs": [
+      {
+       "apis": [
+        13
+       ],
+       "assisted": false,
+       "inconclusive": true,
+       "reason": "max_iters",
+       "rounds": 1,
+       "run": "run_20260729-234511",
+       "success": false,
+       "verdict": "unresolved"
+      },
+      {
+       "apis": [
+        13,
+        13
+       ],
+       "assisted": true,
+       "inconclusive": true,
+       "reason": "synthesised_data_import",
+       "rounds": 2,
+       "run": "run_20260729-234845",
+       "success": false,
+       "verdict": "inconclusive"
+      },
+      {
+       "apis": [
+        13,
+        13
+       ],
+       "assisted": true,
+       "inconclusive": true,
+       "reason": "synthesised_data_import",
+       "rounds": 2,
+       "run": "run_20260730-000527",
+       "success": false,
+       "verdict": "inconclusive"
+      },
+      {
+       "apis": [
+        13,
+        13
+       ],
+       "assisted": true,
+       "inconclusive": true,
+       "reason": "synthesised_data_import",
+       "rounds": 2,
+       "run": "run_20260730-001305",
+       "success": false,
+       "verdict": "inconclusive"
+      },
+      {
+       "apis": [
+        13,
+        28
+       ],
+       "assisted": true,
+       "inconclusive": true,
+       "reason": "max_iters",
+       "rounds": 2,
+       "run": "run_20260730-001848",
+       "success": false,
+       "verdict": "unresolved"
+      }
+     ],
      "outcome": {
       "assisted": true,
-      "exit_meaning": "3 —— 跑到了但有不可驗證的成分(或 1,若 LLM 失效)",
+      "exit_meaning": "1 —— 外圈用盡機會仍沒能讓樣本跑起來",
       "inconclusive": true,
-      "iterations": 2,
-      "n_llm_failures": 0,
+      "iterations": 3,
+      "n_llm_failures": 1,
       "n_plan_errors": 0,
-      "reason": "synthesised_data_import",
+      "reason": "no_progress",
       "reasons": [
-       "synthesised_data_import"
+       "no_progress"
       ],
       "success": false,
       "synthesized_apis": [],
-      "verdict": "inconclusive"
+      "verdict": "unresolved"
      },
      "partial": false,
      "reason_info": {
-      "kind": "bad",
-      "label": "依賴了合成的資料匯入值",
-      "why": "被匯入的其實是變數而不是函式，我們給了一個值。那個值是編的，所以這一輪標成 inconclusive。"
+      "kind": "warn",
+      "label": "連續輪次沒有推進",
+      "why": "外圈判定這幾輪沒有把樣本推到更深的地方，停止繼續迭代。同樣是被守衛停下來的，不是收斂。"
      },
      "report_version": 1,
      "rounds": [
@@ -8678,7 +8722,7 @@ window.DATA = {
        "delta": null,
        "dispatch_raises": [],
        "dynamic_code": [],
-       "emu_seconds": 3.08,
+       "emu_seconds": 5.48,
        "entry_points": [
         {
          "ep_type": "module_entry",
@@ -8688,7 +8732,7 @@ window.DATA = {
         }
        ],
        "llm_calls": 0,
-       "llm_diagnosis": "The sample performed standard anti-debugging checks (IsDebuggerPresent, CheckRemoteDebuggerPresent) and detected a debugger, displaying a MessageBoxW with 〔引文已移除〕 before exiting. The emulator likely returned TRUE for one of these checks, causing the sample to bail out. No crash or missing DLLs observed.",
+       "llm_diagnosis": "The sample performed standard anti-debugging checks (IsDebuggerPresent, CheckRemoteDebuggerPresent) and detected a debugger in the emulated environment. It then displayed a MessageBoxW with the explicit message 〔引文已移除〕 and exited with code 0xFEE1DEAD (4277006424). The emulator's implementation of IsDebuggerPresent and/or CheckRemoteDebuggerPresent returned TRUE, causing the sample to bail out. These APIs must be answered as FALSE to simulate an ordinary workstation.",
        "llm_seconds": 0.0,
        "n_apis": 13,
        "n_arity_fallbacks": 0,
@@ -8697,15 +8741,20 @@ window.DATA = {
        "nudged": false,
        "payload_hits_discounted": 0,
        "payload_seen": false,
-       "profile": [],
+       "profile": [
+        {
+         "key": "trace_tail",
+         "value": "True"
+        }
+       ],
        "profile_changed": [
         {
          "key": "hostname",
-         "value": "DESKTOP-7F3K9M2"
+         "value": "DESKTOP-7F3K9A2"
         },
         {
          "key": "user_name",
-         "value": "john"
+         "value": "john.doe"
         },
         {
          "key": "os_ver",
@@ -8730,24 +8779,34 @@ window.DATA = {
        "watchlist_in": []
       },
       {
-       "add_watchlist": [],
+       "add_watchlist": [
+        "ntdll.ntqueryinformationprocess",
+        "ntdll.ntsetinformationthread",
+        "ntdll.ntquerysysteminformation"
+       ],
        "api_added": [
         "kernel32.localfree",
+        "ntdll.ntclose",
+        "ntdll.ntcreatesection",
+        "ntdll.ntmapviewofsection",
+        "ntdll.ntopenfile",
+        "ntdll.ntprotectvirtualmemory",
         "ntdll.ntqueryinformationprocess",
         "ntdll.ntquerysysteminformation",
         "ntdll.ntsetinformationthread"
        ],
-       "api_removed": [
-        "kernel32.getmodulefilenamew",
-        "kernel32.loadlibrarya",
-        "user32.getuserobjectinformationw",
-        "user32.messageboxw"
-       ],
+       "api_removed": [],
        "api_scope": [
         {
          "api": "kernel32.checkremotedebuggerpresent",
          "sources": [
           "watch"
+         ]
+        },
+        {
+         "api": "kernel32.getmodulefilenamew",
+         "sources": [
+          "args"
          ]
         },
         {
@@ -8760,6 +8819,12 @@ window.DATA = {
          "api": "kernel32.isdebuggerpresent",
          "sources": [
           "watch"
+         ]
+        },
+        {
+         "api": "kernel32.loadlibrarya",
+         "sources": [
+          "args"
          ]
         },
         {
@@ -8787,19 +8852,64 @@ window.DATA = {
          ]
         },
         {
+         "api": "ntdll.ntclose",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "ntdll.ntcreatesection",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "ntdll.ntmapviewofsection",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "ntdll.ntopenfile",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "ntdll.ntprotectvirtualmemory",
+         "sources": [
+          "args"
+         ]
+        },
+        {
          "api": "ntdll.ntqueryinformationprocess",
          "sources": [
+          "watch",
           "args"
          ]
         },
         {
          "api": "ntdll.ntquerysysteminformation",
          "sources": [
+          "watch",
           "args"
          ]
         },
         {
          "api": "ntdll.ntsetinformationthread",
+         "sources": [
+          "watch",
+          "args"
+         ]
+        },
+        {
+         "api": "user32.getuserobjectinformationw",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "user32.messageboxw",
          "sources": [
           "args"
          ]
@@ -8823,36 +8933,40 @@ window.DATA = {
          "width": 4
         }
        ],
-       "delta": 0,
+       "delta": 15,
        "dispatch_raises": [],
        "dynamic_code": [],
-       "emu_seconds": 60.14,
+       "emu_seconds": 632.39,
        "entry_points": [
         {
          "ep_type": "module_entry",
          "error": "",
-         "n_apis": 13,
+         "n_apis": 28,
          "start_addr": "0x17d7e66"
         }
        ],
        "llm_calls": 2,
-       "llm_diagnosis": "",
-       "llm_seconds": 1.55,
-       "n_apis": 13,
+       "llm_diagnosis": "The sample performed multiple anti-debug checks (IsDebuggerPresent, CheckRemoteDebuggerPresent, NtQueryInformationProcess with ProcessDebugPort, NtSetInformationThread with ThreadHideFromDebugger, NtQuerySystemInformation with SystemKernelDebuggerInformation). One of these checks detected the analysis environment, causing the sample to display a MessageBoxW alerting about a debugger and then exit. The LLM is already answering IsDebuggerPresent and CheckRemoteDebuggerPresent, but the return values (likely FALSE/0) are still triggering the detection. The NtQueryInformationProcess and NtSetInformationThread calls are handled by the emulator and likely returning values that indicate a debugger is present.",
+       "llm_seconds": 1.47,
+       "n_apis": 28,
        "n_arity_fallbacks": 0,
-       "n_faults": 20,
+       "n_faults": 32,
        "n_stack_mismatch": 0,
        "nudged": false,
        "payload_hits_discounted": 0,
        "payload_seen": false,
        "profile": [
         {
+         "key": "trace_tail",
+         "value": "True"
+        },
+        {
          "key": "hostname",
-         "value": "DESKTOP-7F3K9M2"
+         "value": "DESKTOP-7F3K9A2"
         },
         {
          "key": "user_name",
-         "value": "john"
+         "value": "john.doe"
         },
         {
          "key": "os_ver",
@@ -8863,34 +8977,222 @@ window.DATA = {
        "reason": "synthesised_data_import",
        "round": 2,
        "seeded_watchlist": [],
-       "self_abort": false,
-       "stack_checked": 3,
+       "self_abort": true,
+       "stack_checked": 8,
        "stack_unknown": 0,
        "stop": null,
        "synth_fills": [],
        "verdict": "inconclusive",
-       "warnings": [],
+       "warnings": [
+        {
+         "kind": "warn",
+         "text": "樣本這一輪是自己決定結束的（self_abort）—— 它偵測到什麼之後主動退出。"
+        }
+       ],
        "watchlist_in": [
         "kernel32.checkremotedebuggerpresent",
         "kernel32.isdebuggerpresent"
        ]
+      },
+      {
+       "add_watchlist": [],
+       "api_added": [],
+       "api_removed": [
+        "kernel32.localfree",
+        "ntdll.ntclose",
+        "ntdll.ntcreatesection",
+        "ntdll.ntmapviewofsection",
+        "ntdll.ntopenfile",
+        "ntdll.ntprotectvirtualmemory"
+       ],
+       "api_scope": [
+        {
+         "api": "kernel32.checkremotedebuggerpresent",
+         "sources": [
+          "watch"
+         ]
+        },
+        {
+         "api": "kernel32.getmodulefilenamew",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "kernel32.getmodulehandlea",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "kernel32.isdebuggerpresent",
+         "sources": [
+          "watch"
+         ]
+        },
+        {
+         "api": "kernel32.loadlibrarya",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "kernel32.localalloc",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "msvcrt.__getmainargs",
+         "sources": [
+          "conv"
+         ]
+        },
+        {
+         "api": "msvcrt.__wgetmainargs",
+         "sources": [
+          "conv"
+         ]
+        },
+        {
+         "api": "ntdll.ntqueryinformationprocess",
+         "sources": [
+          "watch",
+          "args"
+         ]
+        },
+        {
+         "api": "ntdll.ntquerysysteminformation",
+         "sources": [
+          "watch"
+         ]
+        },
+        {
+         "api": "ntdll.ntsetinformationthread",
+         "sources": [
+          "watch"
+         ]
+        },
+        {
+         "api": "user32.getuserobjectinformationw",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "user32.messageboxw",
+         "sources": [
+          "args"
+         ]
+        }
+       ],
+       "api_signatures": [],
+       "callconv_fixes": [
+        {
+         "api": "msvcrt.__getmainargs",
+         "argc": 5
+        },
+        {
+         "api": "msvcrt.__wgetmainargs",
+         "argc": 5
+        }
+       ],
+       "data_imports": [
+        {
+         "symbol": "msvcrt._adjust_fdiv",
+         "val_int": 0,
+         "width": 4
+        }
+       ],
+       "delta": -14,
+       "dispatch_raises": [],
+       "dynamic_code": [],
+       "emu_seconds": 5.23,
+       "entry_points": [
+        {
+         "ep_type": "module_entry",
+         "error": "",
+         "n_apis": 14,
+         "start_addr": "0x17d7e66"
+        }
+       ],
+       "llm_calls": 4,
+       "llm_diagnosis": "The sample performed anti-debugging checks via IsDebuggerPresent, CheckRemoteDebuggerPresent, and NtQueryInformationProcess (ProcessDebugPort). The LLM handler for NtQueryInformationProcess timed out, causing the emulator to fall back to a synthesised return value. The sample detected this inconsistency and displayed a debugger-detected message box before exiting. The anti-debug checks need to return consistent, clean values indicating no debugger is present.",
+       "llm_seconds": 371.62,
+       "n_apis": 14,
+       "n_arity_fallbacks": 0,
+       "n_faults": 20,
+       "n_stack_mismatch": 0,
+       "nudged": true,
+       "payload_hits_discounted": 0,
+       "payload_seen": false,
+       "profile": [
+        {
+         "key": "trace_tail",
+         "value": "True"
+        },
+        {
+         "key": "hostname",
+         "value": "DESKTOP-7F3K9A2"
+        },
+        {
+         "key": "user_name",
+         "value": "john.doe"
+        },
+        {
+         "key": "os_ver",
+         "value": "name=windows、major=10、minor=0、build=19045"
+        }
+       ],
+       "profile_changed": [],
+       "reason": "synthesised_data_import",
+       "round": 3,
+       "seeded_watchlist": [],
+       "self_abort": true,
+       "stack_checked": 7,
+       "stack_unknown": 0,
+       "stop": null,
+       "synth_fills": [],
+       "verdict": "inconclusive",
+       "warnings": [
+        {
+         "kind": "warn",
+         "text": "這一輪比上一輪**少** 14 次呼叫。迭代之間不是單調遞增，所以圖表用每輪各自獨立的長條，不做累積堆疊。"
+        },
+        {
+         "kind": "warn",
+         "text": "這一輪外圈主動「推」了樣本一把（nudged）—— 有一個值是規則塞的，不是模型要的。"
+        },
+        {
+         "kind": "warn",
+         "text": "樣本這一輪是自己決定結束的（self_abort）—— 它偵測到什麼之後主動退出。"
+        }
+       ],
+       "watchlist_in": [
+        "kernel32.checkremotedebuggerpresent",
+        "kernel32.isdebuggerpresent",
+        "ntdll.ntqueryinformationprocess",
+        "ntdll.ntquerysysteminformation",
+        "ntdll.ntsetinformationthread"
+       ]
       }
      ],
-     "run": "run_20260730-061207",
+     "run": "run_20260730-002948",
      "scale": "linear"
     },
+    "control_source": "chart_above",
     "delta": {
      "classification": "decisive",
-     "deepest_control": 13,
+     "deepest_control": 28,
      "deepest_treated": 27,
-     "distinct_control": 9,
+     "distinct_control": 13,
      "distinct_treated": 21,
      "identical_rounds": false,
-     "iters_control": 2,
+     "iters_control": 3,
      "iters_treated": 2,
-     "reason_control": "synthesised_data_import",
+     "reason_control": "no_progress",
      "reason_treated": "synthesised_data_import",
-     "verdict_control": "inconclusive",
+     "verdict_control": "unresolved",
      "verdict_treated": "inconclusive"
     },
     "derivation": {
@@ -8905,9 +9207,28 @@ window.DATA = {
      "watchlist_seeded": false
     },
     "notes": {
-     "pairing": "這兩欄是同一天、同一批、其他參數固定的配對執行：左邊空 profile ＋ budget 60 秒，右邊用靜態報告派生的 profile ＋ budget。能互相比較的是這兩欄，不是拿右邊去比上面第二組 —— 那是不同批次、參數也不一樣。",
+     "pairing": "左邊是上面那張圖的同一份執行（沒有給任何靜態情報），右邊是用靜態報告派生的 profile ＋ budget 跑的。兩張圖的藍色欄是同一份 run，所以數字一定一致。\n⚠️ 但這兩欄**不是同一個批次**，上限與預算設定也不同，所以差異裡含有批次的成分，不能全部歸給靜態情報。同批次的對照組數字列在下面的頁腳，要做嚴謹比較請用那一組。",
      "verdict": "判定字串不是分數。同一支樣本從 inconclusive 變成 unresolved/no_progress，指的是「停下來的理由不同」，不代表行為覆蓋變差 —— 要看呼叫數與相異 API 數。",
      "watchlist": "靜態端每一支都產出了建議 watchlist，但這一批的執行條件是「不預先種 optional watchlist」，所以那份清單沒有被套用。換句話說，靜態端三項輸出（profile／budget／watchlist）裡只有前兩項被測到。"
+    },
+    "same_batch_control": {
+     "apis": [
+      13,
+      13
+     ],
+     "conditions": {
+      "budget_seconds": 60,
+      "deadline_seconds": 900,
+      "max_iters": 5,
+      "profile_as_designed": true,
+      "profile_empty": true,
+      "profile_keys": [],
+      "run": "run_20260730-061207",
+      "watchlist_seeded": false
+     },
+     "reason": "synthesised_data_import",
+     "run": "run_20260730-061207",
+     "verdict": "inconclusive"
     },
     "treated": {
      "available": true,
@@ -10035,16 +10356,16 @@ window.DATA = {
     "degraded": true,
     "emulation_seconds": 1.805,
     "handoff": true,
-    "handoff_budget_control": 60,
+    "handoff_budget_control": null,
     "handoff_budget_treated": 300,
     "handoff_class": "decisive",
-    "handoff_deep_control": 13,
+    "handoff_deep_control": 28,
     "handoff_deep_treated": 27,
-    "handoff_distinct_control": 9,
+    "handoff_distinct_control": 13,
     "handoff_distinct_treated": 21,
     "handoff_n_watchlist": 1,
     "handoff_profile_applied": false,
-    "handoff_reason_control": "synthesised_data_import",
+    "handoff_reason_control": "no_progress",
     "handoff_reason_treated": "synthesised_data_import",
     "handoff_watchlist_seeded": false,
     "id": "4ab7b0dd",
@@ -11038,13 +11359,14 @@ window.DATA = {
     "commit": "263283d95df38caf8bf991625a8bd990ac241d8e",
     "conditions": {
      "control": {
-      "budget_seconds": 60,
-      "deadline_seconds": 900,
-      "max_iters": 5,
+      "budget_seconds": null,
+      "deadline_seconds": null,
+      "from_chart_above": true,
+      "max_iters": null,
       "profile_as_designed": true,
       "profile_empty": true,
       "profile_keys": [],
-      "run": "run_20260730-061332",
+      "run": "run_20260726-234547-068",
       "watchlist_seeded": false
      },
      "treated": {
@@ -11064,23 +11386,15 @@ window.DATA = {
      "final_profile": [
       {
        "key": "hostname",
-       "value": "DESKTOP-7F3K9M2"
+       "value": "DESKTOP-7F3K9A2"
       },
       {
        "key": "user_name",
        "value": "speakeasy_user"
       },
       {
-       "key": "modules_always_exist",
-       "value": "True"
-      },
-      {
        "key": "os_ver",
        "value": "name=windows、major=10、minor=0、build=19045"
-      },
-      {
-       "key": "busy_desktop",
-       "value": "True"
       }
      ],
      "final_trace": {
@@ -11129,8 +11443,8 @@ window.DATA = {
        "wininet.InternetConnectA",
        "wininet.FtpOpenFileA"
       ],
-      "recorded": 82,
-      "round_n_apis": 82,
+      "recorded": 86,
+      "round_n_apis": 86,
       "top": [
        {
         "api": "KERNEL32.GetProcAddress",
@@ -11145,12 +11459,20 @@ window.DATA = {
         "count": 6
        },
        {
+        "api": "MSVCR90.memcpy",
+        "count": 5
+       },
+       {
         "api": "MSVCR90.??_U@YAPAXI@Z",
         "count": 4
        },
        {
         "api": "USER32.MessageBoxA",
         "count": 4
+       },
+       {
+        "api": "wininet.InternetReadFile",
+        "count": 3
        },
        {
         "api": "KERNEL32.GetFileAttributesA",
@@ -11166,10 +11488,6 @@ window.DATA = {
        },
        {
         "api": "KERNEL32.SystemTimeToFileTime",
-        "count": 2
-       },
-       {
-        "api": "MSVCR90.memcpy",
         "count": 2
        },
        {
@@ -11194,10 +11512,6 @@ window.DATA = {
        },
        {
         "api": "wininet.InternetOpenA",
-        "count": 2
-       },
-       {
-        "api": "wininet.InternetReadFile",
         "count": 2
        },
        {
@@ -11271,12 +11585,17 @@ window.DATA = {
       ]
      },
      "final_watchlist": [
+      "advapi32.adjusttokenprivileges",
+      "advapi32.lookupprivilegevaluea",
+      "advapi32.openprocesstoken",
       "kernel32.getfileattributesa",
       "kernel32.getlocaltime",
+      "kernel32.getmodulefilenamea",
       "kernel32.systemtimetofiletime",
-      "shell32.shgetfolderpatha"
+      "shell32.shgetfolderpatha",
+      "wininet.internetreadfile"
      ],
-     "generated": "2026-07-30 06:21:26",
+     "generated": "2026-07-28 01:17:01",
      "harness": {
       "answered_by_emulator": [
        "??_u@yapaxi@z -> msvcrt.malloc (真的堆積配置)",
@@ -11306,7 +11625,7 @@ window.DATA = {
        "size": 4096
       }
      ],
-     "max_apis": 82,
+     "max_apis": 86,
      "min_apis": 58,
      "n_damaged": 0,
      "n_emulator_errors": 0,
@@ -11342,7 +11661,13 @@ window.DATA = {
       {
        "add_watchlist": [
         "kernel32.getlocaltime",
-        "kernel32.systemtimetofiletime"
+        "kernel32.systemtimetofiletime",
+        "shell32.shgetfolderpatha",
+        "kernel32.getmodulefilenamea",
+        "kernel32.getfileattributesa",
+        "advapi32.openprocesstoken",
+        "advapi32.lookupprivilegevaluea",
+        "advapi32.adjusttokenprivileges"
        ],
        "api_added": [],
        "api_removed": [],
@@ -11350,18 +11675,21 @@ window.DATA = {
         {
          "api": "advapi32.adjusttokenprivileges",
          "sources": [
+          "watch",
           "args"
          ]
         },
         {
          "api": "advapi32.lookupprivilegevaluea",
          "sources": [
+          "watch",
           "args"
          ]
         },
         {
          "api": "advapi32.openprocesstoken",
          "sources": [
+          "watch",
           "args"
          ]
         },
@@ -11374,6 +11702,7 @@ window.DATA = {
         {
          "api": "kernel32.getfileattributesa",
          "sources": [
+          "watch",
           "args"
          ]
         },
@@ -11386,6 +11715,7 @@ window.DATA = {
         {
          "api": "kernel32.getmodulefilenamea",
          "sources": [
+          "watch",
           "args"
          ]
         },
@@ -11420,20 +11750,9 @@ window.DATA = {
          ]
         },
         {
-         "api": "msvcrt.__getmainargs",
-         "sources": [
-          "conv"
-         ]
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "sources": [
-          "conv"
-         ]
-        },
-        {
          "api": "shell32.shgetfolderpatha",
          "sources": [
+          "watch",
           "args"
          ]
         },
@@ -11445,65 +11764,19 @@ window.DATA = {
         }
        ],
        "api_signatures": [],
-       "callconv_fixes": [
-        {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
-        }
-       ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
+       "callconv_fixes": [],
+       "data_imports": [],
        "delta": null,
        "dispatch_raises": [],
        "dynamic_code": [],
-       "emu_seconds": 0.17,
-       "entry_points": [
-        {
-         "ep_type": "dll_entry.DLL_PROCESS_ATTACH",
-         "error": "",
-         "n_apis": 20,
-         "start_addr": "0x1000217f"
-        },
-        {
-         "ep_type": "export.__current_exception",
-         "error": "",
-         "n_apis": 1,
-         "start_addr": "0x100014b0"
-        },
-        {
-         "ep_type": "export.__current_exception_context",
-         "error": "",
-         "n_apis": 18,
-         "start_addr": "0x10001470"
-        },
-        {
-         "ep_type": "export._except_handler4_common",
-         "error": "",
-         "n_apis": 1,
-         "start_addr": "0x10001490"
-        },
-        {
-         "ep_type": "export.memset",
-         "error": "",
-         "n_apis": 18,
-         "start_addr": "0x10001470"
-        }
-       ],
+       "emu_seconds": 0.34,
+       "entry_points": [],
        "llm_calls": 0,
-       "llm_diagnosis": "The sample performs time-based checks using GetLocalTime and SystemTimeToFileTime, then compares file times with CompareFileTime. The emulator's blind spots show that GetLocalTime leaves lpSystemTime uninitialized and SystemTimeToFileTime leaves lpFileTime uninitialized, causing the sample to read garbage values. This leads to failed file time comparisons, triggering 〔引文已移除〕 MessageBoxA calls and bailout. The sample also loads 〔檔名已移除〕 and resolves FTP functions, but the primary failure is the uninitialized time structures. Setting modules_always_exist ensures 〔檔名已移除〕 loads successfully. The user_name 〔引文已移除〕 matches the desktop path seen in GetFileAttributesA calls.",
+       "llm_diagnosis": "The sample performed environment reconnaissance and found indicators of an analysis sandbox. It checked for specific desktop shortcuts (〔檔名已移除〕, 〔檔名已移除〕, and a Chinese-named .lnk) that do not exist in the emulator's default user profile. It also detected the emulator's artifact username 〔引文已移除〕 via SHGetFolderPathA and GetModuleFileNameA returning 〔引文已移除〕 (suggesting the sample is injected into or masquerading as svchost). The sample displayed 〔引文已移除〕, 〔引文已移除〕, 〔引文已移除〕 message boxes and exited cleanly (exit code 0) after failing these environment checks. Additionally, the emulator's GetLocalTime and SystemTimeToFileTime handlers left their output parameters uninitialized (emulator_blind_spots), causing CompareFileTime to operate on garbage data, which likely contributed to the 〔引文已移除〕 logic branching.",
        "llm_seconds": 0.0,
        "n_apis": 58,
        "n_arity_fallbacks": 0,
-       "n_faults": 32,
+       "n_faults": 0,
        "n_stack_mismatch": 0,
        "nudged": false,
        "payload_hits_discounted": 0,
@@ -11512,250 +11785,33 @@ window.DATA = {
        "profile_changed": [
         {
          "key": "hostname",
-         "value": "DESKTOP-7F3K9M2"
+         "value": "DESKTOP-7F3K9A2"
         },
         {
          "key": "user_name",
          "value": "speakeasy_user"
         },
         {
-         "key": "modules_always_exist",
-         "value": "True"
-        },
-        {
          "key": "os_ver",
          "value": "name=windows、major=10、minor=0、build=19045"
         }
        ],
-       "reason": "synthesised_data_import",
+       "reason": "clean",
        "round": 1,
        "seeded_watchlist": [],
        "self_abort": false,
-       "stack_checked": 26,
+       "stack_checked": 0,
        "stack_unknown": 0,
        "stop": null,
        "synth_fills": [],
-       "verdict": "inconclusive",
+       "verdict": "bailed",
        "warnings": [],
        "watchlist_in": []
       },
       {
        "add_watchlist": [
-        "kernel32.getfileattributesa",
-        "shell32.shgetfolderpatha"
+        "wininet.internetreadfile"
        ],
-       "api_added": [],
-       "api_removed": [],
-       "api_scope": [
-        {
-         "api": "advapi32.adjusttokenprivileges",
-         "sources": [
-          "args"
-         ]
-        },
-        {
-         "api": "advapi32.lookupprivilegevaluea",
-         "sources": [
-          "args"
-         ]
-        },
-        {
-         "api": "advapi32.openprocesstoken",
-         "sources": [
-          "args"
-         ]
-        },
-        {
-         "api": "kernel32.closehandle",
-         "sources": [
-          "args"
-         ]
-        },
-        {
-         "api": "kernel32.getfileattributesa",
-         "sources": [
-          "watch",
-          "args"
-         ]
-        },
-        {
-         "api": "kernel32.getlocaltime",
-         "sources": [
-          "watch"
-         ]
-        },
-        {
-         "api": "kernel32.getmodulefilenamea",
-         "sources": [
-          "args"
-         ]
-        },
-        {
-         "api": "kernel32.getmodulehandlea",
-         "sources": [
-          "args"
-         ]
-        },
-        {
-         "api": "kernel32.getprocaddress",
-         "sources": [
-          "args"
-         ]
-        },
-        {
-         "api": "kernel32.loadlibrarya",
-         "sources": [
-          "args"
-         ]
-        },
-        {
-         "api": "kernel32.systemtimetofiletime",
-         "sources": [
-          "watch"
-         ]
-        },
-        {
-         "api": "msvcr90.memset",
-         "sources": [
-          "args"
-         ]
-        },
-        {
-         "api": "msvcrt.__getmainargs",
-         "sources": [
-          "conv"
-         ]
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "sources": [
-          "conv"
-         ]
-        },
-        {
-         "api": "shell32.shgetfolderpatha",
-         "sources": [
-          "watch",
-          "args"
-         ]
-        },
-        {
-         "api": "user32.messageboxa",
-         "sources": [
-          "args"
-         ]
-        }
-       ],
-       "api_signatures": [],
-       "callconv_fixes": [
-        {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
-        }
-       ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
-       "delta": 0,
-       "dispatch_raises": [],
-       "dynamic_code": [],
-       "emu_seconds": 0.29,
-       "entry_points": [
-        {
-         "ep_type": "dll_entry.DLL_PROCESS_ATTACH",
-         "error": "",
-         "n_apis": 20,
-         "start_addr": "0x1000217f"
-        },
-        {
-         "ep_type": "export.__current_exception",
-         "error": "",
-         "n_apis": 1,
-         "start_addr": "0x100014b0"
-        },
-        {
-         "ep_type": "export.__current_exception_context",
-         "error": "",
-         "n_apis": 18,
-         "start_addr": "0x10001470"
-        },
-        {
-         "ep_type": "export._except_handler4_common",
-         "error": "",
-         "n_apis": 1,
-         "start_addr": "0x10001490"
-        },
-        {
-         "ep_type": "export.memset",
-         "error": "",
-         "n_apis": 18,
-         "start_addr": "0x10001470"
-        }
-       ],
-       "llm_calls": 3,
-       "llm_diagnosis": "The sample checks for specific shortcut files on the Public Desktop and user Desktop (〔檔名已移除〕, 〔檔名已移除〕, and a Chinese-named .lnk). GetFileAttributesA returns FILE_ATTRIBUTES_NOT_FOUND (0xFFFFFFFF) because the emulator's Desktop folders are empty. The sample then shows 〔引文已移除〕 message boxes and repeats the entire check sequence, indicating it expects a realistic user environment with common application shortcuts present. The emulator's pristine, empty Desktop is the sandbox tell.",
-       "llm_seconds": 4.18,
-       "n_apis": 58,
-       "n_arity_fallbacks": 0,
-       "n_faults": 32,
-       "n_stack_mismatch": 0,
-       "nudged": true,
-       "payload_hits_discounted": 0,
-       "payload_seen": false,
-       "profile": [
-        {
-         "key": "hostname",
-         "value": "DESKTOP-7F3K9M2"
-        },
-        {
-         "key": "user_name",
-         "value": "speakeasy_user"
-        },
-        {
-         "key": "modules_always_exist",
-         "value": "True"
-        },
-        {
-         "key": "os_ver",
-         "value": "name=windows、major=10、minor=0、build=19045"
-        }
-       ],
-       "profile_changed": [
-        {
-         "key": "busy_desktop",
-         "value": "True"
-        }
-       ],
-       "reason": "synthesised_data_import",
-       "round": 2,
-       "seeded_watchlist": [],
-       "self_abort": false,
-       "stack_checked": 26,
-       "stack_unknown": 0,
-       "stop": null,
-       "synth_fills": [],
-       "verdict": "inconclusive",
-       "warnings": [
-        {
-         "kind": "warn",
-         "text": "這一輪外圈主動「推」了樣本一把（nudged）—— 有一個值是規則塞的，不是模型要的。"
-        }
-       ],
-       "watchlist_in": [
-        "kernel32.getlocaltime",
-        "kernel32.systemtimetofiletime"
-       ]
-      },
-      {
-       "add_watchlist": [],
        "api_added": [
         "kernel32.virtualalloc",
         "msvcr90.??_u@yapaxi@z",
@@ -11767,29 +11823,26 @@ window.DATA = {
         "wininet.internetopena",
         "wininet.internetreadfile"
        ],
-       "api_removed": [],
+       "api_removed": [
+        "kernel32.closehandle"
+       ],
        "api_scope": [
         {
          "api": "advapi32.adjusttokenprivileges",
          "sources": [
-          "args"
+          "watch"
          ]
         },
         {
          "api": "advapi32.lookupprivilegevaluea",
          "sources": [
-          "args"
+          "watch"
          ]
         },
         {
          "api": "advapi32.openprocesstoken",
          "sources": [
-          "args"
-         ]
-        },
-        {
-         "api": "kernel32.closehandle",
-         "sources": [
+          "watch",
           "args"
          ]
         },
@@ -11808,6 +11861,7 @@ window.DATA = {
         {
          "api": "kernel32.getmodulefilenamea",
          "sources": [
+          "watch",
           "args"
          ]
         },
@@ -11860,15 +11914,222 @@ window.DATA = {
          ]
         },
         {
-         "api": "msvcrt.__getmainargs",
+         "api": "shell32.shgetfolderpatha",
          "sources": [
-          "conv"
+          "watch"
          ]
         },
         {
-         "api": "msvcrt.__wgetmainargs",
+         "api": "user32.messageboxa",
          "sources": [
-          "conv"
+          "args"
+         ]
+        },
+        {
+         "api": "wininet.ftpgetfilesize",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "wininet.ftpopenfilea",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "wininet.internetclosehandle",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "wininet.internetconnecta",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "wininet.internetopena",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "wininet.internetreadfile",
+         "sources": [
+          "watch",
+          "args"
+         ]
+        }
+       ],
+       "api_signatures": [],
+       "callconv_fixes": [],
+       "data_imports": [],
+       "delta": 24,
+       "dispatch_raises": [],
+       "dynamic_code": [
+        {
+         "base": "0x50000",
+         "ours": false,
+         "size": "0x1000",
+         "tag": "api.VirtualAlloc.0x50000"
+        },
+        {
+         "base": "0x51000",
+         "ours": false,
+         "size": "0x1000",
+         "tag": "api.VirtualAlloc.0x51000"
+        }
+       ],
+       "emu_seconds": 0.51,
+       "entry_points": [],
+       "llm_calls": 8,
+       "llm_diagnosis": "The sample downloads two files via FTP, copies each into a freshly allocated RWX page, and then crashes with an invalid-instruction fault inside that page. The emulator serves canned content for InternetReadFile (recorded in content_we_fabricated), so the shellcode is our placeholder bytes rather than the real payload. The crash is therefore expected and not an anti-analysis check; the sample would execute the real payload on a live host.",
+       "llm_seconds": 22.04,
+       "n_apis": 82,
+       "n_arity_fallbacks": 0,
+       "n_faults": 0,
+       "n_stack_mismatch": 0,
+       "nudged": true,
+       "payload_hits_discounted": 0,
+       "payload_seen": false,
+       "profile": [
+        {
+         "key": "hostname",
+         "value": "DESKTOP-7F3K9A2"
+        },
+        {
+         "key": "user_name",
+         "value": "speakeasy_user"
+        },
+        {
+         "key": "os_ver",
+         "value": "name=windows、major=10、minor=0、build=19045"
+        }
+       ],
+       "profile_changed": [],
+       "reason": "crash_after_llm_answer",
+       "round": 2,
+       "seeded_watchlist": [],
+       "self_abort": false,
+       "stack_checked": 0,
+       "stack_unknown": 0,
+       "stop": {
+        "address": "0x50000",
+        "instr": "disasm_failed",
+        "pc": "0x50000",
+        "sp": "0x01211f78",
+        "type": "Invalid instruction (UC_ERR_INSN_INVALID)"
+       },
+       "synth_fills": [],
+       "verdict": "inconclusive",
+       "warnings": [
+        {
+         "kind": "warn",
+         "text": "這一輪外圈主動「推」了樣本一把（nudged）—— 有一個值是規則塞的，不是模型要的。"
+        }
+       ],
+       "watchlist_in": [
+        "advapi32.adjusttokenprivileges",
+        "advapi32.lookupprivilegevaluea",
+        "advapi32.openprocesstoken",
+        "kernel32.getfileattributesa",
+        "kernel32.getlocaltime",
+        "kernel32.getmodulefilenamea",
+        "kernel32.systemtimetofiletime",
+        "shell32.shgetfolderpatha"
+       ]
+      },
+      {
+       "add_watchlist": [],
+       "api_added": [],
+       "api_removed": [],
+       "api_scope": [
+        {
+         "api": "advapi32.adjusttokenprivileges",
+         "sources": [
+          "watch"
+         ]
+        },
+        {
+         "api": "advapi32.lookupprivilegevaluea",
+         "sources": [
+          "watch"
+         ]
+        },
+        {
+         "api": "advapi32.openprocesstoken",
+         "sources": [
+          "watch",
+          "args"
+         ]
+        },
+        {
+         "api": "kernel32.getfileattributesa",
+         "sources": [
+          "watch"
+         ]
+        },
+        {
+         "api": "kernel32.getlocaltime",
+         "sources": [
+          "watch"
+         ]
+        },
+        {
+         "api": "kernel32.getmodulefilenamea",
+         "sources": [
+          "watch",
+          "args"
+         ]
+        },
+        {
+         "api": "kernel32.getmodulehandlea",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "kernel32.getprocaddress",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "kernel32.loadlibrarya",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "kernel32.systemtimetofiletime",
+         "sources": [
+          "watch"
+         ]
+        },
+        {
+         "api": "kernel32.virtualalloc",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "msvcr90.??_u@yapaxi@z",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "msvcr90.memcpy",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "msvcr90.memset",
+         "sources": [
+          "args"
          ]
         },
         {
@@ -11916,29 +12177,15 @@ window.DATA = {
         {
          "api": "wininet.internetreadfile",
          "sources": [
+          "watch",
           "args"
          ]
         }
        ],
        "api_signatures": [],
-       "callconv_fixes": [
-        {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
-        }
-       ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
-       "delta": 24,
+       "callconv_fixes": [],
+       "data_imports": [],
+       "delta": 4,
        "dispatch_raises": [],
        "dynamic_code": [
         {
@@ -11954,45 +12201,14 @@ window.DATA = {
          "tag": "api.VirtualAlloc.0x51000"
         }
        ],
-       "emu_seconds": 0.28,
-       "entry_points": [
-        {
-         "ep_type": "dll_entry.DLL_PROCESS_ATTACH",
-         "error": "",
-         "n_apis": 20,
-         "start_addr": "0x1000217f"
-        },
-        {
-         "ep_type": "export.__current_exception",
-         "error": "",
-         "n_apis": 1,
-         "start_addr": "0x100014b0"
-        },
-        {
-         "ep_type": "export.__current_exception_context",
-         "error": "Invalid instruction (UC_ERR_INSN_INVALID)",
-         "n_apis": 30,
-         "start_addr": "0x10001470"
-        },
-        {
-         "ep_type": "export._except_handler4_common",
-         "error": "",
-         "n_apis": 1,
-         "start_addr": "0x10001490"
-        },
-        {
-         "ep_type": "export.memset",
-         "error": "Invalid instruction (UC_ERR_INSN_INVALID)",
-         "n_apis": 30,
-         "start_addr": "0x10001470"
-        }
-       ],
-       "llm_calls": 4,
-       "llm_diagnosis": "The sample downloads two files via FTP, validates their content (likely checking for 〔引文已移除〕/〔引文已移除〕 magic), and displays 〔引文已移除〕/〔引文已移除〕 message boxes when validation fails. The emulator serves canned content for InternetReadFile (noted in content_we_fabricated), which the sample rejects as invalid. This causes the sample to take an error path that eventually executes an invalid instruction (crash). Since the network is emulated and we cannot serve real server responses, the sample will never receive valid payloads. The crash is a consequence of the fabricated FTP data, not an anti-analysis check.",
-       "llm_seconds": 5.1,
-       "n_apis": 82,
-       "n_arity_fallbacks": 3,
-       "n_faults": 32,
+       "emu_seconds": 0.47,
+       "entry_points": [],
+       "llm_calls": 10,
+       "llm_diagnosis": "The sample successfully downloaded a payload via FTP (two separate transfers), copied the received bytes into RWX memory allocated with VirtualAlloc, and then displayed 〔引文已移除〕/〔引文已移除〕 message boxes before crashing with an unhandled interrupt (exit code 0x121212C). The crash occurs after the LLM-synthesised InternetReadFile returns, indicating the fabricated file content did not satisfy the payload's validation (checksum, magic bytes, or decryption routine). Because the emulator has no real network, the content served to InternetReadFile is a canned placeholder; the sample detects the mismatch and aborts. No anti-analysis checks or missing APIs caused the failure.",
+       "llm_seconds": 31.79,
+       "n_apis": 86,
+       "n_arity_fallbacks": 0,
+       "n_faults": 0,
        "n_stack_mismatch": 0,
        "nudged": true,
        "payload_hits_discounted": 0,
@@ -12000,38 +12216,30 @@ window.DATA = {
        "profile": [
         {
          "key": "hostname",
-         "value": "DESKTOP-7F3K9M2"
+         "value": "DESKTOP-7F3K9A2"
         },
         {
          "key": "user_name",
          "value": "speakeasy_user"
         },
         {
-         "key": "modules_always_exist",
-         "value": "True"
-        },
-        {
          "key": "os_ver",
          "value": "name=windows、major=10、minor=0、build=19045"
-        },
-        {
-         "key": "busy_desktop",
-         "value": "True"
         }
        ],
        "profile_changed": [],
-       "reason": "synthesised_data_import",
+       "reason": "crash_after_llm_answer",
        "round": 3,
        "seeded_watchlist": [],
        "self_abort": false,
-       "stack_checked": 34,
-       "stack_unknown": 3,
+       "stack_checked": 0,
+       "stack_unknown": 0,
        "stop": {
         "address": "0x50000",
-        "instr": "disasm_failed",
+        "instr": "pop ds",
         "pc": "0x50000",
         "sp": "0x01211f78",
-        "type": "Invalid instruction (UC_ERR_INSN_INVALID)"
+        "type": "unhandled_interrupt"
        },
        "synth_fills": [],
        "verdict": "inconclusive",
@@ -12042,23 +12250,29 @@ window.DATA = {
         }
        ],
        "watchlist_in": [
+        "advapi32.adjusttokenprivileges",
+        "advapi32.lookupprivilegevaluea",
+        "advapi32.openprocesstoken",
         "kernel32.getfileattributesa",
         "kernel32.getlocaltime",
+        "kernel32.getmodulefilenamea",
         "kernel32.systemtimetofiletime",
-        "shell32.shgetfolderpatha"
+        "shell32.shgetfolderpatha",
+        "wininet.internetreadfile"
        ]
       }
      ],
-     "run": "run_20260730-061332",
+     "run": "run_20260726-234547-068",
      "scale": "linear"
     },
+    "control_source": "chart_above",
     "delta": {
      "classification": "none",
-     "deepest_control": 82,
+     "deepest_control": 86,
      "deepest_treated": 82,
      "distinct_control": 34,
      "distinct_treated": 34,
-     "identical_rounds": true,
+     "identical_rounds": false,
      "iters_control": 3,
      "iters_treated": 3,
      "reason_control": "no_progress",
@@ -12083,9 +12297,29 @@ window.DATA = {
      "watchlist_seeded": false
     },
     "notes": {
-     "pairing": "這兩欄是同一天、同一批、其他參數固定的配對執行：左邊空 profile ＋ budget 60 秒，右邊用靜態報告派生的 profile ＋ budget。能互相比較的是這兩欄，不是拿右邊去比上面第二組 —— 那是不同批次、參數也不一樣。",
+     "pairing": "左邊是上面那張圖的同一份執行（沒有給任何靜態情報），右邊是用靜態報告派生的 profile ＋ budget 跑的。兩張圖的藍色欄是同一份 run，所以數字一定一致。\n⚠️ 但這兩欄**不是同一個批次**，上限與預算設定也不同，所以差異裡含有批次的成分，不能全部歸給靜態情報。同批次的對照組數字列在下面的頁腳，要做嚴謹比較請用那一組。",
      "verdict": "判定字串不是分數。同一支樣本從 inconclusive 變成 unresolved/no_progress，指的是「停下來的理由不同」，不代表行為覆蓋變差 —— 要看呼叫數與相異 API 數。",
      "watchlist": "靜態端每一支都產出了建議 watchlist，但這一批的執行條件是「不預先種 optional watchlist」，所以那份清單沒有被套用。換句話說，靜態端三項輸出（profile／budget／watchlist）裡只有前兩項被測到。"
+    },
+    "same_batch_control": {
+     "apis": [
+      58,
+      58,
+      82
+     ],
+     "conditions": {
+      "budget_seconds": 60,
+      "deadline_seconds": 900,
+      "max_iters": 5,
+      "profile_as_designed": true,
+      "profile_empty": true,
+      "profile_keys": [],
+      "run": "run_20260730-061332",
+      "watchlist_seeded": false
+     },
+     "reason": "no_progress",
+     "run": "run_20260730-061332",
+     "verdict": "unresolved"
     },
     "treated": {
      "available": true,
@@ -13731,10 +13965,10 @@ window.DATA = {
     "degraded": false,
     "emulation_seconds": 0.186,
     "handoff": true,
-    "handoff_budget_control": 60,
+    "handoff_budget_control": null,
     "handoff_budget_treated": 300,
     "handoff_class": "none",
-    "handoff_deep_control": 82,
+    "handoff_deep_control": 86,
     "handoff_deep_treated": 82,
     "handoff_distinct_control": 34,
     "handoff_distinct_treated": 34,
@@ -14299,13 +14533,14 @@ window.DATA = {
     "commit": "263283d95df38caf8bf991625a8bd990ac241d8e",
     "conditions": {
      "control": {
-      "budget_seconds": 60,
-      "deadline_seconds": 900,
-      "max_iters": 5,
+      "budget_seconds": null,
+      "deadline_seconds": null,
+      "from_chart_above": true,
+      "max_iters": null,
       "profile_as_designed": true,
       "profile_empty": true,
       "profile_keys": [],
-      "run": "run_20260730-061405",
+      "run": "run_20260728-142959",
       "watchlist_seeded": false
      },
      "treated": {
@@ -14324,26 +14559,26 @@ window.DATA = {
      "baseline_apis": 10,
      "final_profile": [
       {
+       "key": "run_initterm",
+       "value": "True"
+      },
+      {
        "key": "hostname",
-       "value": "DESKTOP-7F3K9J2"
+       "value": "DESKTOP-7F4K9J2"
       },
       {
        "key": "user_name",
-       "value": "john"
+       "value": "User"
       },
       {
        "key": "os_ver",
        "value": "name=windows、major=10、minor=0、build=19045"
-      },
-      {
-       "key": "busy_desktop",
-       "value": "True"
       }
      ],
      "final_trace": {
       "available": true,
       "capped": false,
-      "distinct": 10,
+      "distinct": 18,
       "first": [
        "KERNEL32.GetSystemTimeAsFileTime",
        "KERNEL32.GetCurrentProcessId",
@@ -14354,11 +14589,31 @@ window.DATA = {
        "KERNEL32.InterlockedCompareExchange",
        "MSVCR90._initterm_e",
        "MSVCR90._initterm",
-       "KERNEL32.InterlockedExchange"
+       "KERNEL32.InterlockedExchange",
+       "MSVCR90.__set_app_type",
+       "KERNEL32.SetUnhandledExceptionFilter",
+       "MSVCR90._decode_pointer",
+       "MSVCR90._lock",
+       "MSVCR90._decode_pointer",
+       "MSVCR90._decode_pointer",
+       "MSVCR90._encode_pointer",
+       "MSVCR90.__dllonexit",
+       "MSVCR90._encode_pointer",
+       "MSVCR90._encode_pointer",
+       "MSVCR90._unlock",
+       "MSVCR90.__wgetmainargs"
       ],
-      "recorded": 10,
-      "round_n_apis": 10,
+      "recorded": 22,
+      "round_n_apis": 22,
       "top": [
+       {
+        "api": "MSVCR90._decode_pointer",
+        "count": 3
+       },
+       {
+        "api": "MSVCR90._encode_pointer",
+        "count": 3
+       },
        {
         "api": "KERNEL32.GetCurrentProcessId",
         "count": 1
@@ -14392,30 +14647,55 @@ window.DATA = {
         "count": 1
        },
        {
+        "api": "KERNEL32.SetUnhandledExceptionFilter",
+        "count": 1
+       },
+       {
+        "api": "MSVCR90.__dllonexit",
+        "count": 1
+       },
+       {
+        "api": "MSVCR90.__set_app_type",
+        "count": 1
+       },
+       {
+        "api": "MSVCR90.__wgetmainargs",
+        "count": 1
+       },
+       {
         "api": "MSVCR90._initterm",
         "count": 1
        },
        {
         "api": "MSVCR90._initterm_e",
         "count": 1
+       },
+       {
+        "api": "MSVCR90._lock",
+        "count": 1
+       },
+       {
+        "api": "MSVCR90._unlock",
+        "count": 1
        }
       ]
      },
      "final_watchlist": [
-      "kernel32.getstartupinfow",
-      "kernel32.getsystemtimeasfiletime",
-      "kernel32.gettickcount",
-      "kernel32.queryperformancecounter"
+      "msvcr90._decode_pointer",
+      "msvcr90._encode_pointer"
      ],
-     "generated": "2026-07-30 06:21:28",
+     "generated": "2026-07-28 14:30:40",
      "harness": {
-      "answered_by_emulator": [],
+      "answered_by_emulator": [
+       "_initterm -> 把初始化表裡的函式排成 run(profile: run_initterm)",
+       "_initterm_e -> 把初始化表裡的函式排成 run(profile: run_initterm)"
+      ],
       "blind_spots": [],
       "filled": [],
       "refused_to_llm": []
      },
      "injections": [],
-     "max_apis": 10,
+     "max_apis": 22,
      "min_apis": 10,
      "n_damaged": 0,
      "n_emulator_errors": 0,
@@ -14429,15 +14709,18 @@ window.DATA = {
       "assisted": true,
       "exit_meaning": "1 —— 外圈用盡機會仍沒能讓樣本跑起來",
       "inconclusive": true,
-      "iterations": 3,
-      "n_llm_failures": 1,
+      "iterations": 2,
+      "n_llm_failures": 0,
       "n_plan_errors": 0,
       "reason": "no_behaviour_change",
       "reasons": [
        "no_behaviour_change"
       ],
       "success": false,
-      "synthesized_apis": [],
+      "synthesized_apis": [
+       "MSVCR90._decode_pointer",
+       "MSVCR90._encode_pointer"
+      ],
       "verdict": "unresolved"
      },
      "partial": false,
@@ -14449,349 +14732,337 @@ window.DATA = {
      "report_version": 1,
      "rounds": [
       {
-       "add_watchlist": [],
+       "add_watchlist": [
+        "msvcr90._decode_pointer",
+        "msvcr90._encode_pointer"
+       ],
        "api_added": [],
        "api_removed": [],
        "api_scope": [
         {
-         "api": "msvcrt.__getmainargs",
+         "api": "msvcr90.__set_app_type",
          "sources": [
-          "conv"
+          "args"
          ]
         },
         {
-         "api": "msvcrt.__wgetmainargs",
+         "api": "msvcr90._decode_pointer",
          "sources": [
-          "conv"
+          "watch",
+          "synth",
+          "sig"
+         ]
+        },
+        {
+         "api": "msvcr90._encode_pointer",
+         "sources": [
+          "watch",
+          "synth",
+          "sig",
+          "raise"
+         ]
+        },
+        {
+         "api": "msvcr90._lock",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "msvcr90._unlock",
+         "sources": [
+          "args"
          ]
         }
        ],
-       "api_signatures": [],
-       "callconv_fixes": [
+       "api_signatures": [
         {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
+         "api": "msvcr90._decode_pointer",
+         "argc": 1,
+         "conflicts": 0,
+         "conv": "cdecl",
+         "source": "llm"
         },
         {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
+         "api": "msvcr90._encode_pointer",
+         "argc": 1,
+         "conflicts": 0,
+         "conv": "cdecl",
+         "source": "llm"
         }
        ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
+       "callconv_fixes": [],
+       "data_imports": [],
        "delta": null,
-       "dispatch_raises": [],
+       "dispatch_raises": [
+        {
+         "api": "MSVCR90._encode_pointer",
+         "exception": "UcError: Invalid memory read (UC_ERR_READ_UNMAPPED)"
+        }
+       ],
        "dynamic_code": [],
-       "emu_seconds": 0.14,
+       "emu_seconds": 0.21,
        "entry_points": [
         {
          "ep_type": "module_entry",
          "error": "",
          "n_apis": 10,
          "start_addr": "0x401825"
+        },
+        {
+         "ep_type": "initterm_0x401744",
+         "error": "Invalid memory fetch (UC_ERR_FETCH_UNMAPPED)",
+         "n_apis": 1,
+         "start_addr": "0x401744"
+        },
+        {
+         "ep_type": "initterm_0x401871",
+         "error": "",
+         "n_apis": 1,
+         "start_addr": "0x401871"
+        },
+        {
+         "ep_type": "initterm_0x40151b",
+         "error": "Invalid memory fetch (UC_ERR_FETCH_UNMAPPED)",
+         "n_apis": 10,
+         "start_addr": "0x40151b"
         }
        ],
-       "llm_calls": 0,
-       "llm_diagnosis": "The trace shows only CRT startup code (GetSystemTimeAsFileTime, GetTickCount, QueryPerformanceCounter, _initterm_e, _initterm) and no application logic. The run ended with exit code 255 and reason 〔引文已移除〕, meaning the emulator fabricated a return value for an API it does not implement. Because the trace stops inside the C-runtime initialisers, the missing API is almost certainly one the CRT calls during start-up (e.g. GetCommandLineW, GetModuleHandleW, HeapSetInformation, SetUnhandledExceptionFilter, or FlsAlloc). Without knowing which call was synthesised we cannot fix the specific return value, but the environment presented to the sample was an empty profile. Providing a realistic workstation profile (hostname, username, Windows 10 19045) removes a common sandbox tell and may allow the CRT to proceed far enough to reach the real entry point.",
-       "llm_seconds": 0.0,
-       "n_apis": 10,
+       "llm_calls": 5,
+       "llm_diagnosis": "The sample is a Visual C++ 2008 (MSVCR90) binary that crashes during CRT initialization because the emulator does not implement _decode_pointer and _encode_pointer. These are security-cookie helpers used by the CRT to protect function pointers; the LLM was asked to synthesize them but declared an incorrect arity, so the return values were garbage. The subsequent __dllonexit call received a bad encoded pointer, and the process later faulted on an unmapped fetch. This is an emulator gap, not anti-analysis behavior.",
+       "llm_seconds": 21.79,
+       "n_apis": 22,
        "n_arity_fallbacks": 0,
-       "n_faults": 12,
+       "n_faults": 27,
        "n_stack_mismatch": 0,
        "nudged": false,
        "payload_hits_discounted": 0,
        "payload_seen": false,
-       "profile": [],
+       "profile": [
+        {
+         "key": "run_initterm",
+         "value": "True"
+        }
+       ],
        "profile_changed": [
         {
          "key": "hostname",
-         "value": "DESKTOP-7F3K9J2"
+         "value": "DESKTOP-7F4K9J2"
         },
         {
          "key": "user_name",
-         "value": "john"
+         "value": "User"
         },
         {
          "key": "os_ver",
          "value": "name=windows、major=10、minor=0、build=19045"
         }
        ],
-       "reason": "synthesised_data_import",
+       "reason": "llm_declared_arity",
        "round": 1,
        "seeded_watchlist": [],
        "self_abort": false,
-       "stack_checked": 10,
-       "stack_unknown": 0,
-       "stop": null,
-       "synth_fills": [],
+       "stack_checked": 18,
+       "stack_unknown": 2,
+       "stop": {
+        "address": "0xfeedf034",
+        "instr": "disasm_failed",
+        "pc": "0xfeedf034",
+        "sp": "0x01211ff0",
+        "type": "Invalid memory fetch (UC_ERR_FETCH_UNMAPPED)"
+       },
+       "synth_fills": [
+        {
+         "api": "msvcr90._decode_pointer",
+         "applied": 0,
+         "calls": 4,
+         "calls_with_writes": 0,
+         "proposed": 0
+        },
+        {
+         "api": "msvcr90._encode_pointer",
+         "applied": 0,
+         "calls": 6,
+         "calls_with_writes": 0,
+         "proposed": 0
+        }
+       ],
        "verdict": "inconclusive",
        "warnings": [],
        "watchlist_in": []
       },
       {
-       "add_watchlist": [
-        "kernel32.getsystemtimeasfiletime",
-        "kernel32.gettickcount",
-        "kernel32.queryperformancecounter",
-        "kernel32.getstartupinfow"
-       ],
-       "api_added": [
-        "kernel32.getstartupinfow",
-        "kernel32.getsystemtimeasfiletime",
-        "kernel32.gettickcount",
-        "kernel32.queryperformancecounter"
-       ],
-       "api_removed": [],
-       "api_scope": [
-        {
-         "api": "kernel32.getstartupinfow",
-         "sources": [
-          "watch"
-         ]
-        },
-        {
-         "api": "kernel32.getsystemtimeasfiletime",
-         "sources": [
-          "watch"
-         ]
-        },
-        {
-         "api": "kernel32.gettickcount",
-         "sources": [
-          "watch"
-         ]
-        },
-        {
-         "api": "kernel32.queryperformancecounter",
-         "sources": [
-          "watch"
-         ]
-        },
-        {
-         "api": "msvcrt.__getmainargs",
-         "sources": [
-          "conv"
-         ]
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "sources": [
-          "conv"
-         ]
-        }
-       ],
-       "api_signatures": [],
-       "callconv_fixes": [
-        {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
-        }
-       ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
-       "delta": 0,
-       "dispatch_raises": [],
-       "dynamic_code": [],
-       "emu_seconds": 0.09,
-       "entry_points": [
-        {
-         "ep_type": "module_entry",
-         "error": "",
-         "n_apis": 10,
-         "start_addr": "0x401825"
-        }
-       ],
-       "llm_calls": 0,
-       "llm_diagnosis": "The sample performs only CRT startup and process/thread identification APIs, then exits with code 255. The emulator returned 〔引文已移除〕 because it had to fabricate return values for several KERNEL32 APIs (GetSystemTimeAsFileTime, GetTickCount, QueryPerformanceCounter, GetStartupInfoW). On a real workstation these calls succeed with live system data; the fabricated values likely fail a sanity or entropy check, causing the sample to bail. No anti-analysis APIs appear in the trace, so the evasion is indirect. Adding a busy_desktop hint makes the environment look more like an interactive user session, which can affect scheduler behaviour and timing APIs.",
-       "llm_seconds": 0.0,
-       "n_apis": 10,
-       "n_arity_fallbacks": 0,
-       "n_faults": 12,
-       "n_stack_mismatch": 0,
-       "nudged": true,
-       "payload_hits_discounted": 0,
-       "payload_seen": false,
-       "profile": [
-        {
-         "key": "hostname",
-         "value": "DESKTOP-7F3K9J2"
-        },
-        {
-         "key": "user_name",
-         "value": "john"
-        },
-        {
-         "key": "os_ver",
-         "value": "name=windows、major=10、minor=0、build=19045"
-        }
-       ],
-       "profile_changed": [
-        {
-         "key": "busy_desktop",
-         "value": "True"
-        }
-       ],
-       "reason": "synthesised_data_import",
-       "round": 2,
-       "seeded_watchlist": [],
-       "self_abort": false,
-       "stack_checked": 10,
-       "stack_unknown": 0,
-       "stop": null,
-       "synth_fills": [],
-       "verdict": "inconclusive",
-       "warnings": [
-        {
-         "kind": "warn",
-         "text": "這一輪外圈主動「推」了樣本一把（nudged）—— 有一個值是規則塞的，不是模型要的。"
-        }
-       ],
-       "watchlist_in": []
-      },
-      {
        "add_watchlist": [],
        "api_added": [],
        "api_removed": [],
        "api_scope": [
         {
-         "api": "kernel32.getstartupinfow",
+         "api": "msvcr90.__set_app_type",
          "sources": [
-          "watch"
+          "args"
          ]
         },
         {
-         "api": "kernel32.getsystemtimeasfiletime",
+         "api": "msvcr90._decode_pointer",
          "sources": [
-          "watch"
+          "watch",
+          "synth",
+          "sig"
          ]
         },
         {
-         "api": "kernel32.gettickcount",
+         "api": "msvcr90._encode_pointer",
          "sources": [
-          "watch"
+          "watch",
+          "synth",
+          "sig",
+          "raise"
          ]
         },
         {
-         "api": "kernel32.queryperformancecounter",
+         "api": "msvcr90._lock",
          "sources": [
-          "watch"
+          "args"
          ]
         },
         {
-         "api": "msvcrt.__getmainargs",
+         "api": "msvcr90._unlock",
          "sources": [
-          "conv"
-         ]
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "sources": [
-          "conv"
+          "args"
          ]
         }
        ],
-       "api_signatures": [],
-       "callconv_fixes": [
+       "api_signatures": [
         {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
+         "api": "msvcr90._decode_pointer",
+         "argc": 1,
+         "conflicts": 0,
+         "conv": "cdecl",
+         "source": "llm"
         },
         {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
+         "api": "msvcr90._encode_pointer",
+         "argc": 1,
+         "conflicts": 0,
+         "conv": "cdecl",
+         "source": "llm"
         }
        ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
+       "callconv_fixes": [],
+       "data_imports": [],
        "delta": 0,
-       "dispatch_raises": [],
+       "dispatch_raises": [
+        {
+         "api": "MSVCR90._encode_pointer",
+         "exception": "UcError: Invalid memory read (UC_ERR_READ_UNMAPPED)"
+        }
+       ],
        "dynamic_code": [],
-       "emu_seconds": 0.1,
+       "emu_seconds": 0.24,
        "entry_points": [
         {
          "ep_type": "module_entry",
          "error": "",
          "n_apis": 10,
          "start_addr": "0x401825"
+        },
+        {
+         "ep_type": "initterm_0x401744",
+         "error": "Invalid memory fetch (UC_ERR_FETCH_UNMAPPED)",
+         "n_apis": 1,
+         "start_addr": "0x401744"
+        },
+        {
+         "ep_type": "initterm_0x401871",
+         "error": "",
+         "n_apis": 1,
+         "start_addr": "0x401871"
+        },
+        {
+         "ep_type": "initterm_0x40151b",
+         "error": "Invalid memory fetch (UC_ERR_FETCH_UNMAPPED)",
+         "n_apis": 10,
+         "start_addr": "0x40151b"
         }
        ],
        "llm_calls": 5,
        "llm_diagnosis": "",
-       "llm_seconds": 363.49,
-       "n_apis": 10,
+       "llm_seconds": 6.47,
+       "n_apis": 22,
        "n_arity_fallbacks": 0,
-       "n_faults": 12,
+       "n_faults": 27,
        "n_stack_mismatch": 0,
        "nudged": false,
        "payload_hits_discounted": 0,
        "payload_seen": false,
        "profile": [
         {
+         "key": "run_initterm",
+         "value": "True"
+        },
+        {
          "key": "hostname",
-         "value": "DESKTOP-7F3K9J2"
+         "value": "DESKTOP-7F4K9J2"
         },
         {
          "key": "user_name",
-         "value": "john"
+         "value": "User"
         },
         {
          "key": "os_ver",
          "value": "name=windows、major=10、minor=0、build=19045"
-        },
-        {
-         "key": "busy_desktop",
-         "value": "True"
         }
        ],
        "profile_changed": [],
-       "reason": "synthesised_data_import",
-       "round": 3,
+       "reason": "llm_declared_arity",
+       "round": 2,
        "seeded_watchlist": [],
        "self_abort": false,
-       "stack_checked": 10,
-       "stack_unknown": 0,
-       "stop": null,
-       "synth_fills": [],
+       "stack_checked": 18,
+       "stack_unknown": 2,
+       "stop": {
+        "address": "0xfeedf034",
+        "instr": "disasm_failed",
+        "pc": "0xfeedf034",
+        "sp": "0x01211ff0",
+        "type": "Invalid memory fetch (UC_ERR_FETCH_UNMAPPED)"
+       },
+       "synth_fills": [
+        {
+         "api": "msvcr90._decode_pointer",
+         "applied": 0,
+         "calls": 4,
+         "calls_with_writes": 0,
+         "proposed": 0
+        },
+        {
+         "api": "msvcr90._encode_pointer",
+         "applied": 0,
+         "calls": 6,
+         "calls_with_writes": 0,
+         "proposed": 0
+        }
+       ],
        "verdict": "inconclusive",
        "warnings": [],
        "watchlist_in": [
-        "kernel32.getstartupinfow",
-        "kernel32.getsystemtimeasfiletime",
-        "kernel32.gettickcount",
-        "kernel32.queryperformancecounter"
+        "msvcr90._decode_pointer",
+        "msvcr90._encode_pointer"
        ]
       }
      ],
-     "run": "run_20260730-061405",
+     "run": "run_20260728-142959",
      "scale": "linear"
     },
+    "control_source": "chart_above",
     "delta": {
-     "classification": "none",
-     "deepest_control": 10,
+     "classification": "regress",
+     "deepest_control": 22,
      "deepest_treated": 10,
-     "distinct_control": 10,
+     "distinct_control": 18,
      "distinct_treated": 10,
-     "identical_rounds": true,
-     "iters_control": 3,
+     "identical_rounds": false,
+     "iters_control": 2,
      "iters_treated": 3,
      "reason_control": "no_behaviour_change",
      "reason_treated": "no_behaviour_change",
@@ -14815,9 +15086,29 @@ window.DATA = {
      "watchlist_seeded": false
     },
     "notes": {
-     "pairing": "這兩欄是同一天、同一批、其他參數固定的配對執行：左邊空 profile ＋ budget 60 秒，右邊用靜態報告派生的 profile ＋ budget。能互相比較的是這兩欄，不是拿右邊去比上面第二組 —— 那是不同批次、參數也不一樣。",
+     "pairing": "左邊是上面那張圖的同一份執行（沒有給任何靜態情報），右邊是用靜態報告派生的 profile ＋ budget 跑的。兩張圖的藍色欄是同一份 run，所以數字一定一致。\n⚠️ 但這兩欄**不是同一個批次**，上限與預算設定也不同，所以差異裡含有批次的成分，不能全部歸給靜態情報。同批次的對照組數字列在下面的頁腳，要做嚴謹比較請用那一組。",
      "verdict": "判定字串不是分數。同一支樣本從 inconclusive 變成 unresolved/no_progress，指的是「停下來的理由不同」，不代表行為覆蓋變差 —— 要看呼叫數與相異 API 數。",
      "watchlist": "靜態端每一支都產出了建議 watchlist，但這一批的執行條件是「不預先種 optional watchlist」，所以那份清單沒有被套用。換句話說，靜態端三項輸出（profile／budget／watchlist）裡只有前兩項被測到。"
+    },
+    "same_batch_control": {
+     "apis": [
+      10,
+      10,
+      10
+     ],
+     "conditions": {
+      "budget_seconds": 60,
+      "deadline_seconds": 900,
+      "max_iters": 5,
+      "profile_as_designed": true,
+      "profile_empty": true,
+      "profile_keys": [],
+      "run": "run_20260730-061405",
+      "watchlist_seeded": false
+     },
+     "reason": "no_behaviour_change",
+     "run": "run_20260730-061405",
+     "verdict": "unresolved"
     },
     "treated": {
      "available": true,
@@ -15807,12 +16098,12 @@ window.DATA = {
     "degraded": false,
     "emulation_seconds": 0.111,
     "handoff": true,
-    "handoff_budget_control": 60,
+    "handoff_budget_control": null,
     "handoff_budget_treated": 600,
-    "handoff_class": "none",
-    "handoff_deep_control": 10,
+    "handoff_class": "regress",
+    "handoff_deep_control": 22,
     "handoff_deep_treated": 10,
-    "handoff_distinct_control": 10,
+    "handoff_distinct_control": 18,
     "handoff_distinct_treated": 10,
     "handoff_n_watchlist": 6,
     "handoff_profile_applied": false,
@@ -16777,13 +17068,14 @@ window.DATA = {
     "commit": "263283d95df38caf8bf991625a8bd990ac241d8e",
     "conditions": {
      "control": {
-      "budget_seconds": 60,
-      "deadline_seconds": 900,
-      "max_iters": 5,
+      "budget_seconds": null,
+      "deadline_seconds": null,
+      "from_chart_above": true,
+      "max_iters": null,
       "profile_as_designed": true,
       "profile_empty": true,
       "profile_keys": [],
-      "run": "run_20260730-062032",
+      "run": "run_20260727-151837-889",
       "watchlist_seeded": false
      },
      "treated": {
@@ -16803,11 +17095,11 @@ window.DATA = {
      "final_profile": [
       {
        "key": "hostname",
-       "value": "DESKTOP-7F3K9M2"
+       "value": "DESKTOP-7F3K9J2"
       },
       {
        "key": "user_name",
-       "value": "user"
+       "value": "User"
       },
       {
        "key": "os_ver",
@@ -16817,7 +17109,7 @@ window.DATA = {
      "final_trace": {
       "available": true,
       "capped": false,
-      "distinct": 52,
+      "distinct": 56,
       "first": [
        "KERNEL32.GetSystemTimeAsFileTime",
        "KERNEL32.GetCurrentThreadId",
@@ -16860,9 +17152,17 @@ window.DATA = {
        "KERNEL32.FlsSetValue",
        "KERNEL32.HeapAlloc"
       ],
-      "recorded": 322,
-      "round_n_apis": 322,
+      "recorded": 6797,
+      "round_n_apis": 6797,
       "top": [
+       {
+        "api": "KERNEL32.GetFileAttributesExW",
+        "count": 4837
+       },
+       {
+        "api": "kernel32.FlsGetValue2",
+        "count": 1635
+       },
        {
         "api": "KERNEL32.InitializeCriticalSectionEx",
         "count": 83
@@ -16873,11 +17173,11 @@ window.DATA = {
        },
        {
         "api": "KERNEL32.EnterCriticalSection",
-        "count": 32
+        "count": 34
        },
        {
         "api": "KERNEL32.LeaveCriticalSection",
-        "count": 32
+        "count": 33
        },
        {
         "api": "KERNEL32.MultiByteToWideChar",
@@ -16885,7 +17185,7 @@ window.DATA = {
        },
        {
         "api": "KERNEL32.HeapFree",
-        "count": 17
+        "count": 15
        },
        {
         "api": "KERNEL32.GetProcAddress",
@@ -16898,10 +17198,6 @@ window.DATA = {
        {
         "api": "KERNEL32.VirtualProtect",
         "count": 5
-       },
-       {
-        "api": "ADVAPI32.GetTokenInformation",
-        "count": 4
        },
        {
         "api": "KERNEL32.GetEnvironmentVariableW",
@@ -16928,6 +17224,10 @@ window.DATA = {
         "count": 3
        },
        {
+        "api": "KERNEL32.GetLastError",
+        "count": 3
+       },
+       {
         "api": "KERNEL32.GetStdHandle",
         "count": 3
        },
@@ -16936,7 +17236,7 @@ window.DATA = {
         "count": 3
        },
        {
-        "api": "ADVAPI32.ConvertSidToStringSidW",
+        "api": "ADVAPI32.GetTokenInformation",
         "count": 2
        },
        {
@@ -16956,6 +17256,10 @@ window.DATA = {
         "count": 2
        },
        {
+        "api": "KERNEL32.GetCurrentProcessId",
+        "count": 2
+       },
+       {
         "api": "KERNEL32.GetModuleFileNameW",
         "count": 2
        },
@@ -16968,15 +17272,23 @@ window.DATA = {
         "count": 2
        },
        {
+        "api": "KERNEL32.LocalFree",
+        "count": 2
+       },
+       {
         "api": "KERNEL32.SetEnvironmentVariableW",
         "count": 2
        },
        {
-        "api": "kernel32.FlsGetValue2",
-        "count": 2
+        "api": "ADVAPI32.ConvertStringSecurityDescriptorToSecurityDescriptorW",
+        "count": 1
        },
        {
         "api": "KERNEL32.CreateFileW",
+        "count": 1
+       },
+       {
+        "api": "KERNEL32.FindClose",
         "count": 1
        },
        {
@@ -17008,19 +17320,11 @@ window.DATA = {
         "count": 1
        },
        {
-        "api": "KERNEL32.GetCurrentProcessId",
-        "count": 1
-       },
-       {
         "api": "KERNEL32.GetCurrentThreadId",
         "count": 1
        },
        {
         "api": "KERNEL32.GetEnvironmentStringsW",
-        "count": 1
-       },
-       {
-        "api": "KERNEL32.GetLastError",
         "count": 1
        },
        {
@@ -17037,6 +17341,10 @@ window.DATA = {
        },
        {
         "api": "KERNEL32.GetSystemTimeAsFileTime",
+        "count": 1
+       },
+       {
+        "api": "KERNEL32.GetTempPathW",
         "count": 1
        },
        {
@@ -17074,17 +17382,19 @@ window.DATA = {
       ]
      },
      "final_watchlist": [
-      "advapi32.convertsidtostringsidw",
-      "advapi32.gettokeninformation",
-      "kernel32.findfirstfileexw"
+      "advapi32.gettokeninformation"
      ],
-     "generated": "2026-07-30 06:21:29",
+     "generated": "2026-07-28 01:17:22",
      "harness": {
       "answered_by_emulator": [
        "flsgetvalue2 -> kernel32.FlsGetValue",
        "setfilepointerex -> kernel32.SetFilePointer (adapted)"
       ],
       "blind_spots": [
+       {
+        "api": "KERNEL32.GetStringTypeW",
+        "field": "lpCharType"
+       },
        {
         "api": "KERNEL32.FindFirstFileExW",
         "field": "lpFindFileData"
@@ -17098,7 +17408,7 @@ window.DATA = {
       "refused_to_llm": []
      },
      "injections": [],
-     "max_apis": 325,
+     "max_apis": 6797,
      "min_apis": 36,
      "n_damaged": 0,
      "n_emulator_errors": 0,
@@ -17110,32 +17420,33 @@ window.DATA = {
      "other_runs": [],
      "outcome": {
       "assisted": true,
-      "exit_meaning": "1 —— 外圈用盡機會仍沒能讓樣本跑起來",
+      "exit_meaning": "3 —— 跑到了但有不可驗證的成分(或 1,若 LLM 失效)",
       "inconclusive": true,
       "iterations": 2,
       "n_llm_failures": 0,
       "n_plan_errors": 0,
-      "reason": "no_progress",
+      "reason": "synthesized_unimplemented_api",
       "reasons": [
-       "no_progress"
+       "synthesized_unimplemented_api"
       ],
       "success": false,
       "synthesized_apis": [
-       "ADVAPI32.ConvertSidToStringSidW"
+       "ADVAPI32.ConvertSidToStringSidW",
+       "ADVAPI32.ConvertStringSecurityDescriptorToSecurityDescriptorW"
       ],
-      "verdict": "unresolved"
+      "verdict": "inconclusive"
      },
      "partial": false,
      "reason_info": {
-      "kind": "warn",
-      "label": "連續輪次沒有推進",
-      "why": "外圈判定這幾輪沒有把樣本推到更深的地方，停止繼續迭代。同樣是被守衛停下來的，不是收斂。"
+      "kind": "bad",
+      "label": "依賴了合成的未實作 API",
+      "why": "模擬器沒實作的 API，回傳值是我們合成的。合成值無法驗證，所以這一輪一律降級成 inconclusive。"
      },
      "report_version": 1,
      "rounds": [
       {
        "add_watchlist": [
-        "advapi32.convertsidtostringsidw"
+        "advapi32.gettokeninformation"
        ],
        "api_added": [],
        "api_removed": [],
@@ -17143,8 +17454,6 @@ window.DATA = {
         {
          "api": "advapi32.convertsidtostringsidw",
          "sources": [
-          "watch",
-          "synth",
           "args"
          ]
         },
@@ -17188,7 +17497,6 @@ window.DATA = {
         {
          "api": "kernel32.findfirstfileexw",
          "sources": [
-          "watch",
           "args"
          ]
         },
@@ -17307,12 +17615,6 @@ window.DATA = {
          ]
         },
         {
-         "api": "kernel32.localfree",
-         "sources": [
-          "raise"
-         ]
-        },
-        {
          "api": "kernel32.multibytetowidechar",
          "sources": [
           "args"
@@ -17347,62 +17649,23 @@ window.DATA = {
          "sources": [
           "args"
          ]
-        },
-        {
-         "api": "msvcrt.__getmainargs",
-         "sources": [
-          "conv"
-         ]
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "sources": [
-          "conv"
-         ]
         }
        ],
        "api_signatures": [],
-       "callconv_fixes": [
-        {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
-        }
-       ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
+       "callconv_fixes": [],
+       "data_imports": [],
        "delta": null,
-       "dispatch_raises": [
-        {
-         "api": "KERNEL32.LocalFree",
-         "exception": "UcError: Invalid memory read (UC_ERR_READ_UNMAPPED)"
-        }
-       ],
+       "dispatch_raises": [],
        "dynamic_code": [],
-       "emu_seconds": 0.9,
-       "entry_points": [
-        {
-         "ep_type": "module_entry",
-         "error": "Invalid memory fetch (UC_ERR_FETCH_UNMAPPED)",
-         "n_apis": 325,
-         "start_addr": "0x14000c650"
-        }
-       ],
+       "emu_seconds": 0.32,
+       "entry_points": [],
        "llm_calls": 2,
-       "llm_diagnosis": "The sample is a PyInstaller boot-strapper performing normal start-up: it queries several PyInstaller-specific environment variables, then calls OpenProcessToken / GetTokenInformation (TokenUser = 1, TokenElevation = 31) and finally ConvertSidToStringSidW to obtain the textual SID of the user and the elevation token. ConvertSidToStringSidW is not implemented in the emulator (listed under 〔引文已移除〕), so the emulator synthesised a return value; the run is therefore marked inconclusive with reason 〔引文已移除〕. The trace shows no anti-analysis checks, no mouse/input polling, no process enumeration, and no LoadLibrary failures. The emulator blind-spot on GetTokenInformation (output buffer not filled for classes other than 20) did not affect the two classes actually used (1 and 31).",
-       "llm_seconds": 2.33,
+       "llm_diagnosis": "The sample is a PyInstaller bootloader performing standard startup initialization: reading PyInstaller-specific environment variables (_PYI_PARENT_PROCESS_LEVEL, _PYI_SPLASH_IPC, PYINSTALLER_STRICT_UNPACK_MODE), querying process token information (TokenUser and TokenIntegrityLevel), and converting the resulting SIDs to string form via ConvertSidToStringSidW. The emulator does not implement ConvertSidToStringSidW, so the call was synthesized. The trace shows the first call passes a null SID pointer (0x0) because the preceding GetTokenInformation for TokenUser (class 1) returned success but left the output buffer uninitialized (emulator blind spot). The program then passes this garbage pointer to ConvertSidToStringSidW, which would crash on a real system. The crash is therefore caused by the emulator's GetTokenInformation handler not filling TokenInformation for classes other than 20.",
+       "llm_seconds": 47.16,
        "n_apis": 325,
        "n_arity_fallbacks": 0,
-       "n_faults": 32,
-       "n_stack_mismatch": 1,
+       "n_faults": 0,
+       "n_stack_mismatch": 0,
        "nudged": false,
        "payload_hits_discounted": 0,
        "payload_seen": false,
@@ -17410,25 +17673,22 @@ window.DATA = {
        "profile_changed": [
         {
          "key": "hostname",
-         "value": "DESKTOP-7F3K9M2"
+         "value": "DESKTOP-7F3K9J2"
         },
         {
          "key": "user_name",
-         "value": "user"
+         "value": "User"
         },
         {
          "key": "os_ver",
          "value": "name=windows、major=10、minor=0、build=19045"
         }
        ],
-       "reason": "synthesised_data_import",
+       "reason": "synthesized_unimplemented_api",
        "round": 1,
-       "seeded_watchlist": [
-        "advapi32.gettokeninformation",
-        "kernel32.findfirstfileexw"
-       ],
+       "seeded_watchlist": [],
        "self_abort": false,
-       "stack_checked": 54,
+       "stack_checked": 0,
        "stack_unknown": 0,
        "stop": {
         "address": "0xfeedf0e0",
@@ -17437,32 +17697,25 @@ window.DATA = {
         "sp": "0x000000000120dea0",
         "type": "Invalid memory fetch (UC_ERR_FETCH_UNMAPPED)"
        },
-       "synth_fills": [
-        {
-         "api": "advapi32.convertsidtostringsidw",
-         "applied": 5,
-         "calls": 4,
-         "calls_with_writes": 4,
-         "proposed": 5
-        }
-       ],
+       "synth_fills": [],
        "verdict": "inconclusive",
        "warnings": [],
        "watchlist_in": []
       },
       {
        "add_watchlist": [],
-       "api_added": [],
+       "api_added": [
+        "advapi32.convertstringsecuritydescriptortosecuritydescriptorw",
+        "kernel32.getfileattributesexw",
+        "kernel32.gettemppathw"
+       ],
        "api_removed": [
-        "kernel32.findclose",
-        "kernel32.localfree"
+        "advapi32.convertsidtostringsidw"
        ],
        "api_scope": [
         {
-         "api": "advapi32.convertsidtostringsidw",
+         "api": "advapi32.convertstringsecuritydescriptortosecuritydescriptorw",
          "sources": [
-          "watch",
-          "synth",
           "args"
          ]
         },
@@ -17498,9 +17751,14 @@ window.DATA = {
          ]
         },
         {
+         "api": "kernel32.findclose",
+         "sources": [
+          "args"
+         ]
+        },
+        {
          "api": "kernel32.findfirstfileexw",
          "sources": [
-          "watch",
           "args"
          ]
         },
@@ -17541,6 +17799,12 @@ window.DATA = {
          ]
         },
         {
+         "api": "kernel32.getfileattributesexw",
+         "sources": [
+          "args"
+         ]
+        },
+        {
          "api": "kernel32.getfiletype",
          "sources": [
           "args"
@@ -17560,6 +17824,12 @@ window.DATA = {
         },
         {
          "api": "kernel32.getstringtypew",
+         "sources": [
+          "args"
+         ]
+        },
+        {
+         "api": "kernel32.gettemppathw",
          "sources": [
           "args"
          ]
@@ -17653,68 +17923,34 @@ window.DATA = {
          "sources": [
           "args"
          ]
-        },
-        {
-         "api": "msvcrt.__getmainargs",
-         "sources": [
-          "conv"
-         ]
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "sources": [
-          "conv"
-         ]
         }
        ],
        "api_signatures": [],
-       "callconv_fixes": [
-        {
-         "api": "msvcrt.__getmainargs",
-         "argc": 5
-        },
-        {
-         "api": "msvcrt.__wgetmainargs",
-         "argc": 5
-        }
-       ],
-       "data_imports": [
-        {
-         "symbol": "msvcrt._adjust_fdiv",
-         "val_int": 0,
-         "width": 4
-        }
-       ],
-       "delta": -3,
+       "callconv_fixes": [],
+       "data_imports": [],
+       "delta": 6472,
        "dispatch_raises": [],
        "dynamic_code": [],
-       "emu_seconds": 0.75,
-       "entry_points": [
-        {
-         "ep_type": "module_entry",
-         "error": "",
-         "n_apis": 322,
-         "start_addr": "0x14000c650"
-        }
-       ],
-       "llm_calls": 7,
-       "llm_diagnosis": "The sample is a PyInstaller-packed executable performing its normal boot-strap sequence: it queries several PyInstaller-specific environment variables (_PYI_PARENT_PROCESS_LEVEL, _PYI_SPLASH_IPC, PYINSTALLER_STRICT_UNPACK_MODE), manipulates the process token, and calls ADVAPI32.ConvertSidToStringSidW to obtain string representations of the user and logon SIDs. The emulator does not implement ConvertSidToStringSidW, so the call is answered by the LLM with synthesised data. Because the return value is fabricated, the run is marked 〔引文已移除〕 (synthesised_data_import) even though the sample would otherwise exit cleanly (exit_code 0). No anti-analysis behaviour, crash, or missing DLL is observed.",
-       "llm_seconds": 8.63,
-       "n_apis": 322,
+       "emu_seconds": 16.89,
+       "entry_points": [],
+       "llm_calls": 3,
+       "llm_diagnosis": "",
+       "llm_seconds": 3.47,
+       "n_apis": 6797,
        "n_arity_fallbacks": 0,
-       "n_faults": 32,
+       "n_faults": 0,
        "n_stack_mismatch": 0,
-       "nudged": true,
+       "nudged": false,
        "payload_hits_discounted": 0,
        "payload_seen": false,
        "profile": [
         {
          "key": "hostname",
-         "value": "DESKTOP-7F3K9M2"
+         "value": "DESKTOP-7F3K9J2"
         },
         {
          "key": "user_name",
-         "value": "user"
+         "value": "User"
         },
         {
          "key": "os_ver",
@@ -17722,55 +17958,48 @@ window.DATA = {
         }
        ],
        "profile_changed": [],
-       "reason": "synthesised_data_import",
+       "reason": "synthesized_unimplemented_api",
        "round": 2,
        "seeded_watchlist": [],
        "self_abort": false,
-       "stack_checked": 52,
+       "stack_checked": 0,
        "stack_unknown": 0,
-       "stop": null,
-       "synth_fills": [
-        {
-         "api": "advapi32.convertsidtostringsidw",
-         "applied": 5,
-         "calls": 4,
-         "calls_with_writes": 4,
-         "proposed": 5
-        }
-       ],
+       "stop": {
+        "address": "",
+        "instr": "",
+        "pc": "0x14002315d",
+        "sp": null,
+        "type": "max_api_count"
+       },
+       "synth_fills": [],
        "verdict": "inconclusive",
        "warnings": [
         {
-         "kind": "warn",
-         "text": "這一輪比上一輪**少** 3 次呼叫。迭代之間不是單調遞增，所以圖表用每輪各自獨立的長條，不做累積堆疊。"
-        },
-        {
-         "kind": "warn",
-         "text": "這一輪外圈主動「推」了樣本一把（nudged）—— 有一個值是規則塞的，不是模型要的。"
+         "kind": "bad",
+         "text": "這一輪是撞到模擬器的 API 呼叫上限才停的 —— 樣本當時還在跑。6,797 這個數字反映的是「上限在哪」，不是「行為有多深」；呼叫大多集中在同一個輪詢迴圈裡。"
         }
        ],
        "watchlist_in": [
-        "advapi32.convertsidtostringsidw",
-        "advapi32.gettokeninformation",
-        "kernel32.findfirstfileexw"
+        "advapi32.gettokeninformation"
        ]
       }
      ],
-     "run": "run_20260730-062032",
-     "scale": "linear"
+     "run": "run_20260727-151837-889",
+     "scale": "log"
     },
+    "control_source": "chart_above",
     "delta": {
-     "classification": "none",
-     "deepest_control": 325,
+     "classification": "regress",
+     "deepest_control": 6797,
      "deepest_treated": 325,
-     "distinct_control": 52,
+     "distinct_control": 56,
      "distinct_treated": 53,
      "identical_rounds": false,
      "iters_control": 2,
      "iters_treated": 2,
-     "reason_control": "no_progress",
+     "reason_control": "synthesized_unimplemented_api",
      "reason_treated": "no_progress",
-     "verdict_control": "unresolved",
+     "verdict_control": "inconclusive",
      "verdict_treated": "unresolved"
     },
     "derivation": {
@@ -17791,9 +18020,28 @@ window.DATA = {
      "watchlist_seeded": false
     },
     "notes": {
-     "pairing": "這兩欄是同一天、同一批、其他參數固定的配對執行：左邊空 profile ＋ budget 60 秒，右邊用靜態報告派生的 profile ＋ budget。能互相比較的是這兩欄，不是拿右邊去比上面第二組 —— 那是不同批次、參數也不一樣。",
+     "pairing": "左邊是上面那張圖的同一份執行（沒有給任何靜態情報），右邊是用靜態報告派生的 profile ＋ budget 跑的。兩張圖的藍色欄是同一份 run，所以數字一定一致。\n⚠️ 但這兩欄**不是同一個批次**，上限與預算設定也不同，所以差異裡含有批次的成分，不能全部歸給靜態情報。同批次的對照組數字列在下面的頁腳，要做嚴謹比較請用那一組。",
      "verdict": "判定字串不是分數。同一支樣本從 inconclusive 變成 unresolved/no_progress，指的是「停下來的理由不同」，不代表行為覆蓋變差 —— 要看呼叫數與相異 API 數。",
      "watchlist": "靜態端每一支都產出了建議 watchlist，但這一批的執行條件是「不預先種 optional watchlist」，所以那份清單沒有被套用。換句話說，靜態端三項輸出（profile／budget／watchlist）裡只有前兩項被測到。"
+    },
+    "same_batch_control": {
+     "apis": [
+      325,
+      322
+     ],
+     "conditions": {
+      "budget_seconds": 60,
+      "deadline_seconds": 900,
+      "max_iters": 5,
+      "profile_as_designed": true,
+      "profile_empty": true,
+      "profile_keys": [],
+      "run": "run_20260730-062032",
+      "watchlist_seeded": false
+     },
+     "reason": "no_progress",
+     "run": "run_20260730-062032",
+     "verdict": "unresolved"
     },
     "treated": {
      "available": true,
@@ -19502,16 +19750,16 @@ window.DATA = {
     "degraded": true,
     "emulation_seconds": 0.087,
     "handoff": true,
-    "handoff_budget_control": 60,
+    "handoff_budget_control": null,
     "handoff_budget_treated": 300,
-    "handoff_class": "none",
-    "handoff_deep_control": 325,
+    "handoff_class": "regress",
+    "handoff_deep_control": 6797,
     "handoff_deep_treated": 325,
-    "handoff_distinct_control": 52,
+    "handoff_distinct_control": 56,
     "handoff_distinct_treated": 53,
     "handoff_n_watchlist": 7,
     "handoff_profile_applied": false,
-    "handoff_reason_control": "no_progress",
+    "handoff_reason_control": "synthesized_unimplemented_api",
     "handoff_reason_treated": "no_progress",
     "handoff_watchlist_seeded": false,
     "id": "c6a4ffb8",
@@ -19571,8 +19819,8 @@ window.DATA = {
   },
   {
    "accent": "static",
-   "blurb": "把靜態流水線派生的環境剖繪與模擬預算餵給動態端當起始條件。這一組是配對實驗：同六支樣本、同一天、其他參數固定，各跑一次「空 profile ＋ budget 60」與一次「靜態派生的 profile ＋ budget」。",
-   "detail": "6 支 × 2 種模式共 12 份 run。⚠️ 只有 profile 與 budget 被套用；靜態端同時產出的建議 watchlist 因為執行條件是「不預先種 optional watchlist」而沒有進場 —— 所以這是對交接機制的**部分**驗證，不是完整驗證。",
+   "blurb": "把靜態流水線派生的環境剖繪與模擬預算餵給動態端當起始條件，跟「沒有給任何靜態情報」的那一次執行並排比較。對照組用的就是每支樣本詳情頁上面那張圖的同一份 run，所以兩張圖的數字一定一致。",
+   "detail": "⚠️ 兩欄不是同一個批次，上限與預算設定也不同，所以差異裡含有批次的成分。同批次的對照組數字保留在每一支的頁腳。另外只有 profile 與 budget 被套用；靜態端同時產出的建議 watchlist 沒有進場 —— 這是對交接機制的部分驗證。",
    "id": "static_first",
    "label": "＋動態＋靜態（靜態報告餵給動態端）",
    "status": "available"

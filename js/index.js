@@ -10,7 +10,8 @@
   var HF_CLASS = {
     decisive: { kind: 'ok' },
     minor: { kind: 'warn' },
-    none: { kind: 'muted' }
+    none: { kind: 'muted' },
+    regress: { kind: 'bad' }
   };
 
   A.markNav();
@@ -61,6 +62,10 @@
       m.n_minor + ' / ' + m.n_pairs, 'warn'));
     row.appendChild(pill((m.classes.none || {}).label + '：' +
       m.n_none + ' / ' + m.n_pairs, 'muted'));
+    if (m.n_regress) {
+      row.appendChild(pill((m.classes.regress || {}).label + '：' +
+        m.n_regress + ' / ' + m.n_pairs, 'bad'));
+    }
     row.appendChild(pill('success = true：' + m.n_success_treated + ' / ' +
       m.n_pairs, 'bad'));
     box.appendChild(row);

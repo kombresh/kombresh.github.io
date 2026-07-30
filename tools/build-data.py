@@ -904,15 +904,42 @@ HANDOFF_MINOR_DISTINCT = 2
 
 
 def classify_handoff(ctl_deep, trt_deep, ctl_distinct, trt_distinct):
+    """分級。方向由「相異 API 數」決定，不由呼叫數決定。
+
+    呼叫數本身沒有方向：這批樣本會卡在輪詢迴圈裡，呼叫數大多半只代表
+    「我們讓它轉多久」。所以倍數只用來判「差距夠不夠大」，
+    是進步還是退步一律看末輪相異 API 有沒有增加。
+    少了這一步，`c6a4ffb8` 的 6,797 → 320 會被標成「決定性改善」。
+    """
     ratio = 1.0
     if ctl_deep and trt_deep:
         ratio = max(ctl_deep, trt_deep) / float(min(ctl_deep, trt_deep))
     gain = (trt_distinct or 0) - (ctl_distinct or 0)
-    if ratio >= HANDOFF_DECISIVE_RATIO or gain >= HANDOFF_DECISIVE_DISTINCT:
+    big = ratio >= HANDOFF_DECISIVE_RATIO or gain >= HANDOFF_DECISIVE_DISTINCT
+    some = ratio >= HANDOFF_MINOR_RATIO or gain >= HANDOFF_MINOR_DISTINCT
+    if gain < 0:
+        # 覆蓋變少：不管呼叫數差幾倍，都不可以叫改善
+        return "regress" if big or some else "none"
+    if big:
         return "decisive"
-    if ratio >= HANDOFF_MINOR_RATIO or gain >= HANDOFF_MINOR_DISTINCT:
+    if some:
         return "minor"
     return "none"
+
+
+def _control_conditions_from_run(dynamic):
+    """控制組的條件。取自 run 本身，因為它不在第三組那份 manifest 裡。"""
+    return {
+        "run": scrub((dynamic or {}).get("run"), 64),
+        "budget_seconds": None,          # 這份 run 的報告沒有帶預算欄位
+        "max_iters": None,
+        "deadline_seconds": None,
+        "profile_keys": [],
+        "profile_empty": True,           # 這一組沒有給任何初始 profile
+        "watchlist_seeded": False,
+        "profile_as_designed": True,     # 沒有設計值可比，不當成失敗
+        "from_chart_above": True,        # 前端要據此改寫圖例與說明
+    }
 
 
 def _mode_conditions(rep):
@@ -931,18 +958,50 @@ def _mode_conditions(rep):
     }
 
 
-def build_handoff(sha8, last, baseline_apis):
+def build_handoff(sha8, last, baseline_apis, dynamic=None):
+    """第三組：沒有靜態情報 vs 有靜態情報。
+
+    控制組**直接沿用上面那張圖的同一份 run**（`dynamic`），不是第三組批次裡的
+    `normal`。理由是呈現一致性：同一頁上出現兩個「沒有靜態情報」的數字
+    （199,941 與 88,254）會讓讀者以為其中一個是錯的。改成共用同一份 run 之後，
+    兩張圖的藍色欄由建構方式保證相同，不可能再漂掉。
+
+    代價要寫清楚，而且已經寫進 notes：兩欄**不是同一個批次**，所以差異裡含有
+    批次與上限設定的成分，不能全歸給靜態情報。第三組批次自己的 `normal`
+    仍然留在 `same_batch_control` 欄位裡，要做嚴謹比較的人拿得到。
+    """
     if not last:
         return {"available": False, "why": "沒有第三組的資料來源"}
     pair = (last.get("runs") or {}).get(sha8) or {}
     ctl_rec, trt_rec = pair.get("normal"), pair.get("static-profile")
-    if not ctl_rec or not trt_rec:
-        have = "、".join(sorted(pair)) or "都沒有"
-        return {"available": False,
-                "why": "這一支的配對不完整（只有 %s）" % have}
+    if not trt_rec:
+        return {"available": False, "why": "這一支沒有 static-profile 的執行"}
 
-    control = build_mirage([ctl_rec["run"]], baseline_apis)
     treated = build_mirage([trt_rec["run"]], baseline_apis)
+
+    # 控制組：優先用上面那張圖的 run
+    if dynamic and dynamic.get("available"):
+        control = dynamic
+        ctl_cond = _control_conditions_from_run(dynamic)
+        ctl_source = "chart_above"
+    elif ctl_rec:
+        control = build_mirage([ctl_rec["run"]], baseline_apis)
+        ctl_cond = _mode_conditions(ctl_rec["report"])
+        ctl_source = "same_batch"
+    else:
+        return {"available": False, "why": "這一支沒有可用的控制組"}
+
+    # 同批的 normal 一律保留，即使沒有被用來當控制組
+    same_batch = None
+    if ctl_rec:
+        sb = build_mirage([ctl_rec["run"]], baseline_apis)
+        same_batch = {
+            "run": sb.get("run"),
+            "apis": [r["n_apis"] for r in sb.get("rounds") or []],
+            "verdict": (sb.get("outcome") or {}).get("verdict"),
+            "reason": (sb.get("outcome") or {}).get("reason"),
+            "conditions": _mode_conditions(ctl_rec["report"]),
+        }
 
     def deepest(m):
         vals = [r["n_apis"] for r in m.get("rounds") or [] if r.get("n_apis")]
@@ -975,8 +1034,10 @@ def build_handoff(sha8, last, baseline_apis):
         "batch_generated_at": last.get("generated_at"),
         "control": control,
         "treated": treated,
+        "control_source": ctl_source,
+        "same_batch_control": same_batch,
         "conditions": {
-            "control": _mode_conditions(ctl_rec["report"]),
+            "control": ctl_cond,
             "treated": _mode_conditions(trt_rec["report"]),
         },
         "derivation": {
@@ -1008,11 +1069,19 @@ def build_handoff(sha8, last, baseline_apis):
                                 == [r["n_apis"] for r in treated.get("rounds") or []],
         },
         "notes": {
+            # 控制組換成上面那張圖的 run 之後，「同一批」就不成立了。
+            # 兩種來源給兩種說法 —— 頁面上的敘述必須跟資料一致。
             "pairing":
-                "這兩欄是同一天、同一批、其他參數固定的配對執行：左邊空 profile "
-                "＋ budget 60 秒，右邊用靜態報告派生的 profile ＋ budget。"
-                "能互相比較的是這兩欄，不是拿右邊去比上面第二組 —— 那是不同批次、"
-                "參數也不一樣。",
+                ("左邊是上面那張圖的同一份執行（沒有給任何靜態情報），"
+                 "右邊是用靜態報告派生的 profile ＋ budget 跑的。"
+                 "兩張圖的藍色欄是同一份 run，所以數字一定一致。\n"
+                 "⚠️ 但這兩欄**不是同一個批次**，上限與預算設定也不同，"
+                 "所以差異裡含有批次的成分，不能全部歸給靜態情報。"
+                 "同批次的對照組數字列在下面的頁腳，要做嚴謹比較請用那一組。"
+                 if ctl_source == "chart_above" else
+                 "這兩欄是同一天、同一批、其他參數固定的配對執行："
+                 "左邊空 profile ＋ budget 60 秒，右邊用靜態報告派生的 "
+                 "profile ＋ budget。能互相比較的是這兩欄。"),
             "watchlist":
                 "靜態端每一支都產出了建議 watchlist，但這一批的執行條件是"
                 "「不預先種 optional watchlist」，所以那份清單沒有被套用。"
@@ -1278,7 +1347,9 @@ def build_sample(sha8, speak_pair, intel, mirage_runs, last=None):
     speak = build_speakeasy(official, speak_pair["variant"])
     static = build_static(intel) if intel else {"available": False}
     dynamic = build_mirage(mirage_runs or [], speak["apis_total"])
-    handoff = build_handoff(sha8, last, speak["apis_total"])
+    # dynamic 一起傳進去：第三組的控制組直接沿用上面那張圖的同一份 run，
+    # 這樣兩張圖的藍色欄由建構方式保證一致（數字與輪數都一樣）。
+    handoff = build_handoff(sha8, last, speak["apis_total"], dynamic)
 
     meta = (intel or {}).get("meta") or {}
     target = meta.get("target") or ""
@@ -1391,14 +1462,14 @@ TRACKS = [
         "label": "＋動態＋靜態（靜態報告餵給動態端）",
         "accent": "static",
         "status": "available",
-        "blurb": "把靜態流水線派生的環境剖繪與模擬預算餵給動態端當起始條件。"
-                 "這一組是配對實驗：同六支樣本、同一天、其他參數固定，"
-                 "各跑一次「空 profile ＋ budget 60」與一次「靜態派生的 "
-                 "profile ＋ budget」。",
-        "detail": "6 支 × 2 種模式共 12 份 run。⚠️ 只有 profile 與 budget 被套用；"
-                  "靜態端同時產出的建議 watchlist 因為執行條件是"
-                  "「不預先種 optional watchlist」而沒有進場 —— "
-                  "所以這是對交接機制的**部分**驗證，不是完整驗證。",
+        "blurb": "把靜態流水線派生的環境剖繪與模擬預算餵給動態端當起始條件，"
+                 "跟「沒有給任何靜態情報」的那一次執行並排比較。"
+                 "對照組用的就是每支樣本詳情頁上面那張圖的同一份 run，"
+                 "所以兩張圖的數字一定一致。",
+        "detail": "⚠️ 兩欄不是同一個批次，上限與預算設定也不同，"
+                  "所以差異裡含有批次的成分。同批次的對照組數字保留在每一支的"
+                  "頁腳。另外只有 profile 與 budget 被套用；靜態端同時產出的"
+                  "建議 watchlist 沒有進場 —— 這是對交接機制的部分驗證。",
     },
 ]
 
@@ -1417,6 +1488,12 @@ HANDOFF_CLASSES = {
         "label": "無明顯變化",
         "blurb": "兩者差距在上述門檻以下，含逐筆完全相同。",
     },
+    # 方向是看末輪相異 API，不是看呼叫數 —— 呼叫數在輪詢迴圈樣本上只反映
+    # 「我們讓它轉多久」。少了這一級，6,797 → 320 會被標成改善。
+    "regress": {
+        "label": "覆蓋變少",
+        "blurb": "末輪相異 API 比對照組少 —— 不論呼叫數差幾倍，都不算改善。",
+    },
 }
 
 
@@ -1430,6 +1507,8 @@ def build_handoff_meta(samples, last):
 
     def count(cls):
         return sum(1 for h in hs if h["delta"]["classification"] == cls)
+
+    n_chart_above = sum(1 for h in hs if h.get("control_source") == "chart_above")
 
     n_seeded = sum(1 for h in hs if h["derivation"]["watchlist_seeded"])
     n_profile = sum(1 for h in hs if h["derivation"]["profile_applied"])
@@ -1447,6 +1526,8 @@ def build_handoff_meta(samples, last):
         "n_decisive": count("decisive"),
         "n_minor": count("minor"),
         "n_none": count("none"),
+        "n_regress": count("regress"),
+        "n_control_from_chart_above": n_chart_above,
         "n_profile_applied": n_profile,
         "n_watchlist_seeded": n_seeded,
         "n_profile_as_designed": n_designed,
@@ -1457,16 +1538,22 @@ def build_handoff_meta(samples, last):
         "n_success_treated": sum(
             1 for h in hs if (h["treated"].get("outcome") or {}).get("success")),
         "headline":
-            "同一批、其他參數固定的配對實驗：%d 支裡 %d 支決定性改善、"
-            "%d 支小幅改善、%d 支沒有變化。兩組的 success 都是 0/%d —— "
+            "沒有靜態情報 vs 有靜態情報：%d 支裡 %d 支決定性改善、%d 支小幅改善、"
+            "%d 支沒有變化、%d 支覆蓋變少。兩組的 success 都是 0/%d —— "
             "靜態情報改變的是「跑到哪」，不是「分析成功」。"
             % (len(hs), count("decisive"), count("minor"), count("none"),
-               len(hs)),
+               count("regress"), len(hs)),
         "caveat":
-            "靜態端派生的三樣東西裡，profile 只有 %d 支拿到非空值、budget 全部套用、"
-            "建議 watchlist %d 支被套用。所以沒有變化的那幾支不能推論成"
-            "「靜態情報沒用」—— 最可能起作用的那一項根本沒進場。"
-            % (n_profile, n_seeded),
+            "⚠️ 對照組用的是每支樣本上面那張圖的同一份 run（%d / %d 支），"
+            "為的是讓同一頁不會出現兩個不同的「沒有靜態情報」數字。"
+            "代價是兩欄**不是同一批次**，上限與預算設定也不同，"
+            "差異裡含有批次的成分，不能全部歸給靜態情報 —— "
+            "同批次的對照組數字保留在每一支的頁腳。\n"
+            "另外，靜態端派生的三樣東西裡，profile 只有 %d 支拿到非空值、"
+            "budget 全部套用、建議 watchlist %d 支被套用。"
+            "所以沒有變化的那幾支不能推論成「靜態情報沒用」—— "
+            "最可能起作用的那一項根本沒進場。"
+            % (n_chart_above, len(hs), n_profile, n_seeded),
     }
 
 
