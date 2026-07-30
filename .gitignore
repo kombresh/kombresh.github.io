@@ -1,0 +1,3 @@
+# Python 匯入 tools/ 底下的腳本時會產生的位元碼快取
+__pycache__/
+*.py[cod]

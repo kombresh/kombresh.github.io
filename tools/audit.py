@@ -130,7 +130,8 @@ FORBIDDEN_KEYS = {
 C2_FORBIDDEN_SUBKEYS = {"value", "host", "raw", "url"}
 
 # ---- B 前端注入 -----------------------------------------------------------
-SINK_PATTERNS = [
+# 預編：這些會對每一個 .js／.html 的每一行各跑一次，data.js 就有一萬九千行。
+_SINKS = [
     (r"\.innerHTML\s*(?:\+)?=", "innerHTML 指派"),
     (r"\.outerHTML\s*(?:\+)?=", "outerHTML 指派"),
     (r"\binsertAdjacentHTML\s*\(", "insertAdjacentHTML"),
@@ -144,6 +145,7 @@ SINK_PATTERNS = [
     (r"\bdangerouslySetInnerHTML\b", "React dangerouslySetInnerHTML"),
     (r"\$\(\s*[^)]*\)\s*\.\s*(?:html|append|prepend|after|before)\s*\(", "jQuery HTML 注入"),
 ]
+SINK_PATTERNS = [(re.compile(p), why) for p, why in _SINKS]
 # 行內事件處理器（HTML）
 INLINE_EVENT = re.compile(r"\son(?:click|load|error|mouseover|focus|submit|change)\s*=", re.I)
 
@@ -504,10 +506,15 @@ def check_b(root, fnd):
         if text is None:
             continue
         scan = strip_js_comments(text) if ext == ".js" else text
+        # splitlines() 必須在迴圈外。原本 `text.splitlines()` 寫在迴圈裡、
+        # 而且一行被呼叫兩次，等於每一行都把整個檔案重切一遍 —— data.js 有
+        # 一萬九千行、474 KB，那是 18 GB 的字串搬運，實測 142 秒。資料量翻倍
+        # 時間變四倍，所以第三組上線把它從「幾秒」推成「兩分鐘」。
+        raw_lines = text.splitlines()
         for ln, line in enumerate(scan.splitlines(), 1):
-            raw_line = text.splitlines()[ln - 1] if ln - 1 < len(text.splitlines()) else line
+            raw_line = raw_lines[ln - 1] if ln - 1 < len(raw_lines) else line
             for pat, why in SINK_PATTERNS:
-                if re.search(pat, line):
+                if pat.search(line):
                     fnd.fail("B", rel, ln,
                              "把資料寫進不安全的 sink：%s（資料來自惡意樣本與 LLM，皆不可信）" % why,
                              clip(raw_line.strip()))

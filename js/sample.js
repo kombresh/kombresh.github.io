@@ -219,6 +219,38 @@
     append(l0, i0, el('span', null, '純 Speakeasy 基線'));
     var l1 = el('span'); l1.appendChild(el('i'));
     l1.appendChild(el('span', null, 'mirage 的每一輪'));
+    // 「圖上看到幾段」不等於「有幾個進入點」：比例太小的分段只有幾個像素。
+    // 787f2b0c 的 20/1/18/1/18 就是這樣被看成三段的。門檻用比例算，不看像素，
+    // 這樣不同螢幕寬度得到同一句話。
+    var segs0 = bars[0].segments || [];
+    var total0 = bars[0].value || 0;
+    if (segs0.length > 1) {
+      // 零次呼叫的進入點畫不出來（高度 0），跟「太薄看不清」是兩件事，分開講。
+      var zero = segs0.filter(function (g) { return !g.n_apis; });
+      var faint = segs0.filter(function (g) {
+        return g.n_apis > 0 && total0 > 0 && g.n_apis / total0 < 0.03;
+      });
+      var txt = '基線的進入點有 ' + segs0.length + ' 個';
+      var caveats = [];
+      // 對數刻度下根本不堆疊（堆疊高度在對數軸上沒有意義），所以別說「分成幾段」
+      if (isLog) {
+        caveats.push('這一支的縱軸是對數刻度，基線不做堆疊 —— 圖上是一整根');
+      }
+      if (zero.length) {
+        caveats.push(zero.length + ' 個進入點一次呼叫都沒有（' +
+          zero.map(function (g) { return g.label; }).join('、') +
+          '），所以圖上畫不出來');
+      }
+      if (faint.length) {
+        caveats.push(faint.length + ' 段佔比不到 3%（' +
+          faint.map(function (g) {
+            return g.label + ' ' + A.num(g.n_apis) + ' 個 API';
+          }).join('、') + '），在圖上只有幾個像素');
+      }
+      if (caveats.length) txt += '；' + caveats.join('；');
+      box.appendChild(el('p', 'small faint', txt + '。點長條看完整的分段表。'));
+    }
+
     append(legend, l0, l1);
     if (!(s.handoff || {}).available) {
       var l2 = el('span'); l2.appendChild(el('i', 'ghost-key'));
@@ -354,23 +386,57 @@
 
       if (b.kind === 'baseline' && !isLog && b.segments.length > 1) {
         // 線性刻度下才堆疊 —— 對數刻度上堆疊的高度沒有意義。
+        //
+        // 整根一個 <g>，不是一段一個。原本一段一個 <g> 時，作用中狀態會讓
+        // 每一段各自套上 1.6px 的白色外框；1 個 API 的分段真實高度只有 4px
+        // 左右，上下各被吃掉 0.8px 之後幾乎只剩邊框，看起來像分段之間的白線。
+        // 787f2b0c 實際有 5 段（20/1/18/1/18），因此在圖上只看得到 3 段，
+        // 而那三段又剛好接近相等 —— 讀起來像被人為切成三等份。
+        var gBase = svgEl('g', {
+          'class': 'seg base-stack', tabindex: '0', role: 'button',
+          'aria-label': '基線，' + A.num(b.value) + ' 個 API，依 ' +
+                        b.segments.length + ' 個進入點分段'
+        });
+        // 先量再畫：分隔線要不要畫，得看它兩側的分段撐不撐得住。
         var acc = 0;
+        var geom = [];
         b.segments.forEach(function (seg, si) {
           if (!seg.n_apis) return;
           var yTop = y(acc + seg.n_apis), yBot = y(acc);
           acc += seg.n_apis;
-          var g = svgEl('g', {
-            'class': 'seg', tabindex: '0', role: 'button',
-            'aria-label': '基線 ' + seg.label + '，' + seg.n_apis + ' 個 API'
-          });
-          g.appendChild(svgEl('rect', {
-            x: x0, y: yTop, width: barW, height: Math.max(2, yBot - yTop),
-            fill: seg.unattributed ? 'var(--pending)' : segColor(si, b.segments.length)
-          }));
-          bind(g, 'base', state, panel, function () { return baselinePanel(s, b); });
-          state.groups.push({ key: 'base', node: g });
-          svg.appendChild(g);
+          geom.push({ seg: seg, si: si, yTop: yTop, yBot: yBot,
+                      h: yBot - yTop });
         });
+
+        geom.forEach(function (gm) {
+          var r = svgEl('rect', {
+            x: x0, y: gm.yTop, width: barW,
+            // 高度照真實比例，只在小於 2px 時給地板值（可點擊用）
+            height: Math.max(2, gm.h)
+          });
+          r.setAttribute('fill', gm.seg.unattributed
+            ? 'var(--pending)' : segColor(gm.si, b.segments.length));
+          gBase.appendChild(r);
+        });
+
+        // 分隔線只畫在「兩側都撐得住」的邊界上。一條 1px 的線會從兩側各覆蓋
+        // 0.5px，畫在 2.3px 的分段旁邊等於把它抹掉一半 —— 顏色差本身就足以
+        // 分界，寧可少一條線也不要讓分段消失。
+        var THIN = 4;
+        for (var gi2 = 1; gi2 < geom.length; gi2++) {
+          if (geom[gi2].h < THIN || geom[gi2 - 1].h < THIN) continue;
+          gBase.appendChild(svgEl('line', {
+            'class': 'seg-sep', x1: x0, x2: x0 + barW,
+            y1: geom[gi2].yBot, y2: geom[gi2].yBot }));
+        }
+        var yTotal = y(b.value);
+        gBase.appendChild(svgEl('rect', {
+          'class': 'stack-outline', x: x0, y: yTotal, width: barW,
+          height: Math.max(2, base - yTotal) }));
+        bind(gBase, 'base', state, panel,
+             function () { return baselinePanel(s, b); });
+        state.groups.push({ key: 'base', node: gBase });
+        svg.appendChild(gBase);
       } else {
         var yTop2 = y(b.value);
         var g2 = svgEl('g', {

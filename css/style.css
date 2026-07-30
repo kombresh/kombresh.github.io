@@ -450,6 +450,28 @@ table.data td.wrap-any { word-break: break-all; }
 .chart-svg .seg:focus { outline: none; }
 .chart-svg .seg:focus-visible rect { stroke: var(--focus-ring); stroke-width: 2; }
 
+/* 基線那一根是堆疊的：外框與作用中的白框畫在「整根」外面，不畫在每一段上。
+   SVG 的描邊以路徑為中心，各吃掉一半線寬；一段只有 4px 高時，1.6px 的白框
+   會把它整段吃掉，看起來只剩一條白線。分段之間改用獨立的分隔線。 */
+.chart-svg .seg.base-stack rect:not(.stack-outline) { stroke: none; }
+.chart-svg .seg.base-stack .seg-sep {
+  stroke: var(--bar-stroke);
+  stroke-width: 1;
+}
+.chart-svg .seg.base-stack .stack-outline {
+  fill: none;
+  stroke: var(--bar-stroke);
+  stroke-width: 1;
+}
+.chart-svg .seg.base-stack.is-active .stack-outline {
+  stroke: var(--focus-ring);
+  stroke-width: 1.6;
+}
+.chart-svg .seg.base-stack:focus-visible .stack-outline {
+  stroke: var(--focus-ring);
+  stroke-width: 2;
+}
+
 .chart-svg .ghost rect {
   fill: rgba(255,255,255,.018);
   stroke: var(--pending);
